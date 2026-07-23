@@ -58,7 +58,7 @@ export function ProfileManager({ user }: { user: AuthenticatedUser }) {
             required={false}
           />
           {message ? <p className="text-sm" role="status">{message}</p> : null}
-          <Button disabled={saving}>
+          <Button type="submit" disabled={saving}>
             {saving ? "Saving…" : "Save information"}
           </Button>
         </form>
@@ -137,7 +137,7 @@ function ChangePasswordForm() {
             {message}
           </p>
         ) : null}
-        <Button disabled={saving}>
+        <Button type="submit" disabled={saving}>
           {saving ? "Changing…" : "Change password"}
         </Button>
       </form>
