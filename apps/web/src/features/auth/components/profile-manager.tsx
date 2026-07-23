@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { changePassword, updateProfile } from "../auth-api";
 import type { AuthenticatedUser } from "../types";
+import { notifyCurrentUserUpdated } from "../use-current-user";
 
 export function ProfileManager({ user }: { user: AuthenticatedUser }) {
   const router = useRouter();
@@ -18,11 +19,13 @@ export function ProfileManager({ user }: { user: AuthenticatedUser }) {
     setSaving(true);
     setMessage("");
     try {
-      await updateProfile({
+      const updated = await updateProfile({
         name: String(data.get("name")),
         email: String(data.get("email")),
-        currentPassword: String(data.get("currentPassword")),
+        currentPassword:
+          String(data.get("currentPassword")) || undefined,
       });
+      notifyCurrentUserUpdated(updated);
       setMessage("Profile updated");
       router.refresh();
     } catch (error) {
@@ -50,8 +53,9 @@ export function ProfileManager({ user }: { user: AuthenticatedUser }) {
           </label>
           <PasswordField
             name="currentPassword"
-            label="Current password to confirm"
+            label="Current password (required only to change email)"
             autoComplete="current-password"
+            required={false}
           />
           {message ? <p className="text-sm" role="status">{message}</p> : null}
           <Button disabled={saving}>
@@ -145,10 +149,12 @@ function PasswordField({
   name,
   label,
   autoComplete,
+  required = true,
 }: {
   name: string;
   label: string;
   autoComplete: string;
+  required?: boolean;
 }) {
   return (
     <label className="grid gap-1.5 text-sm font-medium">
@@ -158,7 +164,7 @@ function PasswordField({
         type="password"
         minLength={8}
         autoComplete={autoComplete}
-        required
+        required={required}
       />
     </label>
   );

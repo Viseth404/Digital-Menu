@@ -15,20 +15,28 @@ export async function PATCH(request: NextRequest) {
     const body = readObject(await request.json());
     const name = readString(body, "name", { min: 2 })!;
     const email = assertEmail(readString(body, "email")!);
-    const currentPassword = readString(body, "currentPassword", { min: 8 })!;
+    const currentPassword = readString(body, "currentPassword", {
+      min: 8,
+      optional: true,
+    });
     const user = await prisma.user.findUniqueOrThrow({
       where: { id: sessionUser.id },
       select: { email: true, passwordHash: true },
     });
 
-    if (!verifyPassword(currentPassword, user.passwordHash)) {
-      throw new ApiException("Current password is incorrect", 400);
-    }
-    if (
-      email !== user.email &&
-      (await prisma.user.findUnique({ where: { email } }))
-    ) {
-      throw new ApiException("Email is already in use", 409);
+    if (email !== user.email) {
+      if (
+        !currentPassword ||
+        !verifyPassword(currentPassword, user.passwordHash)
+      ) {
+        throw new ApiException(
+          "Current password is required to change your login email",
+          400,
+        );
+      }
+      if (await prisma.user.findUnique({ where: { email } })) {
+        throw new ApiException("Email is already in use", 409);
+      }
     }
 
     const updated = await prisma.user.update({

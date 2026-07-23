@@ -33,7 +33,7 @@ export function changePassword(input: {
 export function updateProfile(input: {
   name: string;
   email: string;
-  currentPassword: string;
+  currentPassword?: string;
 }) {
   return apiRequest<AuthenticatedUser>("/auth/profile", {
     method: "PATCH",
