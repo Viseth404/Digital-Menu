@@ -37,7 +37,9 @@ export async function POST(request: NextRequest) {
     }
 
     const filename = `${randomUUID()}.${extension}`;
-    const uploadDirectory = path.join(process.cwd(), "public", "uploads");
+    const uploadDirectory =
+      process.env.UPLOAD_DIRECTORY ??
+      path.join(process.cwd(), "public", "uploads");
     await mkdir(uploadDirectory, { recursive: true });
     await writeFile(
       path.join(uploadDirectory, filename),
