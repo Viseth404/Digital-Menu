@@ -43,9 +43,17 @@ export function OrdersManager() {
   const [message, setMessage] = React.useState("");
   const [origin, setOrigin] = React.useState("");
   const [unreadOrders, setUnreadOrders] = React.useState(0);
+  const [alertsEnabled, setAlertsEnabled] = React.useState(false);
   const knownOrderIds = React.useRef<Set<string>>(new Set());
+  const audioContext = React.useRef<AudioContext | null>(null);
 
   React.useEffect(() => setOrigin(window.location.origin), []);
+  React.useEffect(
+    () => () => {
+      if (audioContext.current) void audioContext.current.close();
+    },
+    [],
+  );
   React.useEffect(() => {
     getMerchantStores()
       .then((stores) => setStore(stores[0] ?? null))
@@ -86,7 +94,6 @@ export function OrdersManager() {
     if (!store) return;
 
     const poll = async () => {
-      if (document.visibilityState === "hidden") return;
       try {
         const orderData = await getStoreOrders(store.id);
         const newOrders = orderData.filter(
@@ -96,7 +103,7 @@ export function OrdersManager() {
         setOrders(orderData);
         if (newOrders.length) {
           setUnreadOrders((count) => count + newOrders.length);
-          playOrderAlert();
+          void playOrderAlert(audioContext);
           if (
             "Notification" in window &&
             Notification.permission === "granted"
@@ -124,16 +131,32 @@ export function OrdersManager() {
   }, [view]);
 
   async function enableNotifications() {
+    const soundEnabled = await playOrderAlert(audioContext);
+    setAlertsEnabled(soundEnabled);
+
     if (!("Notification" in window)) {
-      setMessage("Browser notifications are not supported on this device");
+      setMessage(
+        soundEnabled
+          ? "Test sound played. Browser pop-up notifications are not supported on this device."
+          : "This browser blocked order sounds. Check the site's sound permission.",
+      );
       return;
     }
+
     const permission = await Notification.requestPermission();
-    setMessage(
-      permission === "granted"
-        ? "New-order sound and browser notifications enabled"
-        : "Notification permission was not enabled",
-    );
+    if (!soundEnabled) {
+      setMessage(
+        "This browser blocked the test sound. Allow sound for this site, then try again.",
+      );
+    } else if (permission === "granted") {
+      setMessage(
+        "Test sound played. New-order sound and browser notifications are enabled.",
+      );
+    } else {
+      setMessage(
+        "Test sound played. Order sounds are enabled, but pop-up notifications were not allowed.",
+      );
+    }
   }
 
   async function addTable(event: React.FormEvent<HTMLFormElement>) {
@@ -280,7 +303,8 @@ export function OrdersManager() {
               className="bg-white text-zinc-950 hover:bg-white/90"
               onClick={() => void enableNotifications()}
             >
-              <BellRingIcon /> Enable alerts
+              <BellRingIcon />
+              {alertsEnabled ? "Test alerts" : "Enable alerts"}
             </Button>
             <Button
               className="bg-white text-zinc-950 hover:bg-white/90"
@@ -689,7 +713,9 @@ function formatElapsed(value: string) {
   return `${Math.floor(minutes / 60)} hr ${minutes % 60} min waiting`;
 }
 
-function playOrderAlert() {
+async function playOrderAlert(
+  contextRef: React.MutableRefObject<AudioContext | null>,
+) {
   try {
     const AudioContextClass =
       window.AudioContext ??
@@ -698,20 +724,25 @@ function playOrderAlert() {
           webkitAudioContext?: typeof AudioContext;
         }
       ).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const context = new AudioContextClass();
+    if (!AudioContextClass) return false;
+    const context = contextRef.current ?? new AudioContextClass();
+    contextRef.current = context;
+    if (context.state === "suspended") await context.resume();
+    if (context.state !== "running") return false;
+
     const oscillator = context.createOscillator();
     const gain = context.createGain();
     oscillator.frequency.setValueAtTime(880, context.currentTime);
     oscillator.frequency.setValueAtTime(1_120, context.currentTime + 0.12);
-    gain.gain.setValueAtTime(0.12, context.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.35);
+    gain.gain.setValueAtTime(0.22, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.45);
     oscillator.connect(gain);
     gain.connect(context.destination);
     oscillator.start();
-    oscillator.stop(context.currentTime + 0.35);
-    oscillator.addEventListener("ended", () => void context.close());
+    oscillator.stop(context.currentTime + 0.45);
+    return true;
   } catch {
     // Audio alerts are a progressive enhancement.
+    return false;
   }
 }
