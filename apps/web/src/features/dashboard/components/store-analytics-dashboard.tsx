@@ -95,7 +95,7 @@ export function StoreAnalyticsDashboard() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <section className="overflow-hidden rounded-2xl border bg-zinc-950 p-6 text-white shadow-sm md:p-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -149,12 +149,12 @@ export function StoreAnalyticsDashboard() {
         ))}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <SalesTrend analytics={analytics} />
         <StoreHealth analytics={analytics} />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_1.4fr]">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
         <TopItems analytics={analytics} />
         <RecentInvoices analytics={analytics} />
       </div>
@@ -164,37 +164,57 @@ export function StoreAnalyticsDashboard() {
 
 function SalesTrend({ analytics }: { analytics: StoreAnalytics }) {
   const maximum = Math.max(...analytics.trend.map((point) => point.revenue), 1);
+  const isMonthlyRange = analytics.trend.length > 7;
 
   return (
-    <section className="rounded-2xl border bg-card p-5 shadow-sm md:p-6">
+    <section className="min-w-0 overflow-hidden rounded-2xl border bg-card p-4 shadow-sm sm:p-5 md:p-6">
       <div>
         <h3 className="font-semibold">Sales trend</h3>
         <p className="text-sm text-muted-foreground">
           Completed invoice revenue by day
         </p>
       </div>
-      <div className="mt-6 flex h-56 items-end gap-1.5 sm:gap-3">
-        {analytics.trend.map((point) => {
+      <div
+        className="mt-6 flex h-56 min-w-0 items-end gap-1 sm:gap-1.5 md:gap-2"
+        role="img"
+        aria-label={`${analytics.trend.length}-day sales revenue chart`}
+      >
+        {analytics.trend.map((point, index) => {
           const height = point.revenue
             ? Math.max(8, (point.revenue / maximum) * 100)
             : 2;
+          const showMonthlyLabel =
+            !isMonthlyRange ||
+            index === 0 ||
+            index === analytics.trend.length - 1 ||
+            index % 5 === 0;
+
           return (
             <div
               key={point.date}
-              className="group flex h-full min-w-0 flex-1 flex-col justify-end"
+              className="group flex h-full min-w-0 flex-1 basis-0 flex-col justify-end"
             >
               <div className="relative flex flex-1 items-end">
                 <div
-                  className="w-full rounded-t-md bg-zinc-900 transition hover:bg-zinc-700"
+                  className="w-full min-w-px rounded-t-sm bg-zinc-900 transition-colors hover:bg-zinc-700 motion-reduce:transition-none sm:rounded-t-md"
                   style={{ height: `${height}%` }}
+                  title={`${formatDate(point.date)}: ${formatMoney(
+                    point.revenue,
+                    analytics.store.currency,
+                  )}, ${point.orders} orders`}
                 />
                 <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-zinc-950 px-2 py-1 text-xs text-white shadow-lg group-hover:block">
                   {formatMoney(point.revenue, analytics.store.currency)} ·{" "}
                   {point.orders} orders
                 </div>
               </div>
-              <p className="mt-2 truncate text-center text-[10px] text-muted-foreground">
-                {formatDate(point.date)}
+              <p
+                className={`mt-2 h-4 truncate text-center text-[9px] text-muted-foreground sm:text-[10px] ${
+                  showMonthlyLabel ? "" : "invisible"
+                }`}
+                aria-hidden={!showMonthlyLabel}
+              >
+                {showMonthlyLabel ? formatChartDate(point.date) : ""}
               </p>
             </div>
           );
@@ -373,6 +393,13 @@ function formatMoney(value: number, currency: string) {
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en", {
     month: "short",
+    day: "numeric",
+  }).format(new Date(`${value}T12:00:00`));
+}
+
+function formatChartDate(value: string) {
+  return new Intl.DateTimeFormat("en", {
+    month: "numeric",
     day: "numeric",
   }).format(new Date(`${value}T12:00:00`));
 }
