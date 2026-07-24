@@ -123,27 +123,31 @@ model MerchantMember {
 }
 
 model Store {
-  id            String      @id @default(cuid())
-  merchantId    String
-  name          String
-  slug          String
-  description   String?
-  status        StoreStatus @default(ACTIVE)
-  isPublished   Boolean     @default(false)
-  address       String?
-  phone         String?
-  email         String?
-  logoUrl       String?
-  coverImageUrl String?
-  primaryColor  String      @default("#166534")
-  accentColor   String      @default("#F0FDF4")
-  facebookUrl   String?
-  instagramUrl  String?
-  telegramUrl   String?
-  tiktokUrl     String?
-  timezone      String      @default("Asia/Phnom_Penh")
-  currency      String      @default("USD")
-  exchangeRate  Decimal     @default(1) @db.Decimal(12, 4)
+  id                String      @id @default(cuid())
+  merchantId        String
+  name              String
+  slug              String
+  description       String?
+  status            StoreStatus @default(ACTIVE)
+  isPublished       Boolean     @default(false)
+  address           String?
+  phone             String?
+  email             String?
+  logoUrl           String?
+  coverImageUrl     String?
+  promotionEnabled  Boolean     @default(false)
+  promotionTitle    String?
+  promotionMessage  String?
+  promotionImageUrl String?
+  primaryColor      String      @default("#166534")
+  accentColor       String      @default("#F0FDF4")
+  facebookUrl       String?
+  instagramUrl      String?
+  telegramUrl       String?
+  tiktokUrl         String?
+  timezone          String      @default("Asia/Phnom_Penh")
+  currency          String      @default("USD")
+  exchangeRate      Decimal     @default(1) @db.Decimal(12, 4)
 
   merchant   Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   products   Product[]

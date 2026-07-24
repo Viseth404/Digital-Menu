@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Input } from "@/components/ui/input";
 import {
+  PROMOTION_RULES,
   STORE_CURRENCIES,
   STORE_SOCIALS,
   STORE_THEME,
@@ -78,6 +79,55 @@ export function StoreSettingsFields({ store }: { store: Store }) {
         </div>
       </SettingsSection>
 
+      <SettingsSection title="Menu promotion popup">
+        <div className="sm:col-span-2">
+          <p className="text-sm text-muted-foreground">
+            Show customers a promotion shortly after they open your public menu.
+            It appears once per browser session.
+          </p>
+        </div>
+        <FormInput
+          label="Promotion headline"
+          name="promotionTitle"
+          defaultValue={store.promotionTitle ?? ""}
+          placeholder="Weekend special — 20% off"
+          maxLength={PROMOTION_RULES.titleMaxLength}
+          required={false}
+        />
+        <label className="grid gap-1.5 text-sm font-medium sm:col-span-2">
+          Promotion message
+          <textarea
+            name="promotionMessage"
+            defaultValue={store.promotionMessage ?? ""}
+            rows={3}
+            maxLength={PROMOTION_RULES.messageMaxLength}
+            placeholder="Enjoy 20% off selected dishes this weekend."
+            className="rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+        </label>
+        <ImageUploadField
+          label="Promotion image"
+          name="promotionImageUrl"
+          description="Optional wide JPG, PNG, WebP, or GIF up to 5 MB."
+          aspect="product"
+          defaultValue={store.promotionImageUrl}
+        />
+        <label className="flex items-center gap-3 rounded-lg border p-3 text-sm sm:col-span-2">
+          <input
+            name="promotionEnabled"
+            type="checkbox"
+            defaultChecked={store.promotionEnabled}
+            className="size-4"
+          />
+          <span>
+            <span className="block font-medium">Enable promotion popup</span>
+            <span className="text-muted-foreground">
+              A headline and message are required when enabled.
+            </span>
+          </span>
+        </label>
+      </SettingsSection>
+
       <SettingsSection title="Social media">
         {STORE_SOCIALS.map(({ key, label }) => (
           <FormInput
@@ -142,11 +192,13 @@ export function buildStoreInput(form: FormData): UpdateStoreInput {
     address: nullable("address"),
     logoUrl: nullable("logoUrl"),
     coverImageUrl: nullable("coverImageUrl"),
+    promotionEnabled: form.get("promotionEnabled") === "on",
+    promotionTitle: nullable("promotionTitle"),
+    promotionMessage: nullable("promotionMessage"),
+    promotionImageUrl: nullable("promotionImageUrl"),
     primaryColor: String(form.get("primaryColor")),
     accentColor: String(form.get("accentColor")),
-    ...Object.fromEntries(
-      STORE_SOCIALS.map(({ key }) => [key, nullable(key)]),
-    ),
+    ...Object.fromEntries(STORE_SOCIALS.map(({ key }) => [key, nullable(key)])),
     currency: String(form.get("currency")),
     exchangeRate: Number(form.get("exchangeRate")),
     isPublished: form.get("isPublished") === "on",
