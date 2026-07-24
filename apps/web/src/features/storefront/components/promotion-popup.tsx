@@ -3,6 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { BadgePercentIcon, XIcon } from "lucide-react";
 import { KhmerOrnament } from "@/features/storefront/components/khmer-ornament";
+import {
+  STOREFRONT_COPY,
+  type StorefrontLanguage,
+} from "@/features/storefront/constants";
 import type { StorePromotion } from "@/features/storefront/types";
 import { PROMOTION_RULES } from "@/features/stores/constants";
 
@@ -10,13 +14,16 @@ type PromotionPopupProps = {
   storeKey: string;
   storeName: string;
   promotion: StorePromotion | null;
+  language: StorefrontLanguage;
 };
 
 export function PromotionPopup({
   storeKey,
   storeName,
   promotion,
+  language,
 }: PromotionPopupProps) {
+  const copy = STOREFRONT_COPY[language];
   const [open, setOpen] = useState(false);
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -102,7 +109,7 @@ export function PromotionPopup({
           ref={closeButtonRef}
           type="button"
           onClick={() => setOpen(false)}
-          aria-label="Close promotion"
+          aria-label={copy.closePromotion}
           className="absolute right-3 top-3 z-20 grid size-10 place-items-center rounded-full border border-white/30 bg-black/25 text-white backdrop-blur-md transition hover:rotate-6 hover:bg-black/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
         >
           <XIcon className="size-4" />
@@ -134,7 +141,7 @@ export function PromotionPopup({
             className="pointer-events-none absolute -bottom-14 -right-12 size-36 rotate-12 object-contain opacity-[0.06]"
           />
           <p className="text-[0.65rem] font-bold uppercase tracking-[0.24em] text-[#2E7D32]">
-            A special offer from {storeName}
+            {copy.specialOffer} {storeName}
           </p>
           <h2
             id="promotion-title"
@@ -153,7 +160,7 @@ export function PromotionPopup({
             onClick={() => setOpen(false)}
             className="relative mt-6 inline-flex h-11 items-center justify-center rounded-full bg-[#155D32] px-6 text-sm font-bold text-white shadow-[0_8px_22px_rgba(21,93,50,0.25)] transition hover:-translate-y-0.5 hover:bg-[#2E7D32] hover:shadow-[0_12px_28px_rgba(21,93,50,0.32)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
           >
-            Explore the menu
+            {copy.exploreMenu}
           </button>
         </div>
       </section>

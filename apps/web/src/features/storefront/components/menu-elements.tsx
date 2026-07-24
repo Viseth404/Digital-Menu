@@ -9,7 +9,10 @@ import {
 } from "lucide-react";
 import { appConfig } from "@/config/app-config";
 import { KhmerOrnament } from "@/features/storefront/components/khmer-ornament";
-import { STOREFRONT_COPY } from "@/features/storefront/constants";
+import {
+  STOREFRONT_COPY,
+  type StorefrontLanguage,
+} from "@/features/storefront/constants";
 import { formatStorePrice } from "@/features/stores/format";
 import type {
   StorefrontCategory,
@@ -167,21 +170,24 @@ export function StoreSearch({
   value,
   onChange,
   infoButton,
+  language,
 }: {
   value: string;
   onChange: (value: string) => void;
   infoButton: ReactNode;
+  language: StorefrontLanguage;
 }) {
+  const copy = STOREFRONT_COPY[language];
   return (
     <div className="flex gap-2.5">
       <label className="group/search flex h-12 min-w-0 flex-1 items-center gap-3 rounded-2xl border border-[#7A6A52]/20 bg-[var(--menu-card)] px-4 shadow-[0_8px_28px_rgba(92,69,31,0.07)] transition duration-300 hover:border-[#D4AF37]/45 hover:shadow-[0_12px_32px_rgba(92,69,31,0.1)] focus-within:border-[#D4AF37]/70 focus-within:ring-2 focus-within:ring-[#D4AF37]/15">
         <SearchIcon className="size-[1.1rem] shrink-0 text-[#2E7D32] transition-transform duration-300 group-focus-within/search:scale-110" />
-        <span className="sr-only">Search menu</span>
+        <span className="sr-only">{copy.search}</span>
         <input
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="Search the menu..."
-          aria-label="Search menu"
+          placeholder={copy.search}
+          aria-label={copy.search}
           className="min-w-0 flex-1 bg-transparent text-sm text-[var(--menu-text)] outline-none placeholder:text-[var(--menu-muted)]"
         />
       </label>
@@ -195,20 +201,23 @@ export function CategoryTabs({
   activeCategory,
   allCategoriesValue,
   onChange,
+  language,
 }: {
   groups: StorefrontCategory[];
   activeCategory: string;
   allCategoriesValue: string;
   onChange: (category: string) => void;
+  language: StorefrontLanguage;
 }) {
+  const copy = STOREFRONT_COPY[language];
   return (
     <nav
-      aria-label="Menu categories"
+      aria-label={copy.menuCategories}
       className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       <CategoryButton
         active={activeCategory === allCategoriesValue}
-        label="All menu"
+        label={copy.allMenu}
         onClick={() => onChange(allCategoriesValue)}
       />
       {groups.map((group) => (
@@ -250,25 +259,28 @@ function CategoryButton({
 
 export function MenuSectionHeader({
   totalProducts,
+  language,
 }: {
   totalProducts: number;
+  language: StorefrontLanguage;
 }) {
+  const copy = STOREFRONT_COPY[language];
   return (
     <div className="mb-9">
       <div className="flex items-end justify-between gap-5">
         <div>
           <p className="text-[0.68rem] font-bold uppercase tracking-[0.25em] text-[#2E7D32]">
-            {STOREFRONT_COPY.menuEyebrow}
+            {copy.menuEyebrow}
           </p>
           <h2 className="mt-2 text-3xl font-bold tracking-[-0.025em] text-[var(--menu-text)] sm:text-4xl">
-            {STOREFRONT_COPY.menuTitle}
+            {copy.menuTitle}
           </h2>
           <p className="mt-2 text-sm leading-6 text-[var(--menu-muted)] sm:text-base">
-            {STOREFRONT_COPY.menuDescription}
+            {copy.menuDescription}
           </p>
         </div>
         <span className="mb-1 shrink-0 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-3 py-1.5 text-xs font-bold text-[var(--menu-muted)]">
-          {totalProducts} {totalProducts === 1 ? "item" : "items"}
+          {totalProducts} {totalProducts === 1 ? copy.item : copy.items}
         </span>
       </div>
       <div aria-hidden="true" className="mt-6 flex items-center gap-2">
@@ -290,12 +302,15 @@ export function ProductCard({
   currency,
   exchangeRate,
   onAdd,
+  language,
 }: {
   product: StorefrontProduct;
   currency: string;
   exchangeRate: number;
   onAdd?: () => void;
+  language: StorefrontLanguage;
 }) {
+  const copy = STOREFRONT_COPY[language];
   return (
     <article className="group relative flex min-h-32 overflow-hidden rounded-2xl border border-[#7A6A52]/15 bg-[var(--menu-card)] shadow-[0_8px_28px_rgba(75,55,24,0.06)] transition duration-500 ease-out motion-safe:hover:-translate-y-1 motion-safe:hover:border-[#D4AF37]/40 motion-safe:hover:shadow-[0_20px_45px_rgba(75,55,24,0.14)]">
       <span
@@ -316,7 +331,7 @@ export function ProductCard({
               className="size-7 text-[#7A6A52]/45"
               aria-hidden="true"
             />
-            <span className="sr-only">No image available</span>
+            <span className="sr-only">{copy.noImage}</span>
           </div>
         )}
       </div>
@@ -337,7 +352,7 @@ export function ProductCard({
             <button
               type="button"
               onClick={onAdd}
-              aria-label={`Add ${product.name} to order`}
+              aria-label={`${copy.addToOrder}: ${product.name}`}
               className="group/add grid size-9 shrink-0 place-items-center rounded-full bg-[#155D32] text-white shadow-sm transition duration-300 hover:scale-110 hover:bg-[#2E7D32] hover:shadow-[0_8px_20px_rgba(21,93,50,0.28)] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
             >
               <PlusIcon className="size-4 transition-transform duration-300 group-hover/add:rotate-90" />
@@ -349,7 +364,14 @@ export function ProductCard({
   );
 }
 
-export function EmptyMenu({ search }: { search: string }) {
+export function EmptyMenu({
+  search,
+  language,
+}: {
+  search: string;
+  language: StorefrontLanguage;
+}) {
+  const copy = STOREFRONT_COPY[language];
   return (
     <div className="group/empty khmer-corner relative overflow-hidden rounded-3xl border border-dashed border-[#7A6A52]/25 bg-[var(--menu-card)] p-12 text-center shadow-[0_14px_40px_rgba(75,55,24,0.05)] transition duration-500 hover:border-[#D4AF37]/45 hover:shadow-[0_20px_50px_rgba(75,55,24,0.09)]">
       <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-[#2E7D32]/10 transition duration-500 group-hover/empty:-translate-y-1 group-hover/empty:rotate-3 group-hover/empty:bg-[#D4AF37]/15">
@@ -363,23 +385,28 @@ export function EmptyMenu({ search }: { search: string }) {
         )}
       </div>
       <p className="mt-4 font-semibold text-[var(--menu-text)]">
-        {search ? "No dishes found" : "The menu is coming soon"}
+        {search ? copy.noDishes : copy.menuComingSoon}
       </p>
       <p className="mt-1 text-sm text-[var(--menu-muted)]">
-        {search
-          ? `Try another search instead of “${search}”.`
-          : "This store has not published any products yet."}
+        {search ? copy.adjustSearch : copy.noPublishedProducts}
       </p>
     </div>
   );
 }
 
-export function StoreFooter({ storeName }: { storeName: string }) {
+export function StoreFooter({
+  storeName,
+  language,
+}: {
+  storeName: string;
+  language: StorefrontLanguage;
+}) {
+  const copy = STOREFRONT_COPY[language];
   return (
     <footer className="mt-14 border-t border-[#7A6A52]/15 px-5 py-10 text-center text-sm text-[var(--menu-muted)]">
       <p className="font-semibold text-[var(--menu-text)]">{storeName}</p>
       <p className="mt-3 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[var(--menu-muted)]">
-        {STOREFRONT_COPY.footerAttribution}{" "}
+        {copy.footerAttribution}{" "}
         <span className="text-[#155D32]">{appConfig.name}</span>
       </p>
     </footer>

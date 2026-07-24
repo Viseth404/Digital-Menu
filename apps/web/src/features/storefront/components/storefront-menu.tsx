@@ -135,8 +135,10 @@ export function StorefrontMenu({ store, categoryGroups }: StorefrontMenuProps) {
             <StoreSearch
               value={search}
               onChange={setSearch}
+              language={language}
               infoButton={
                 <StoreInfoDrawer
+                  language={language}
                   name={localizedStore.name}
                   description={localizedStore.description}
                   address={store.address}
@@ -153,6 +155,7 @@ export function StorefrontMenu({ store, categoryGroups }: StorefrontMenuProps) {
                 activeCategory={activeCategory}
                 allCategoriesValue={ALL_CATEGORIES}
                 onChange={setActiveCategory}
+                language={language}
               />
             ) : null}
           </div>
@@ -162,7 +165,10 @@ export function StorefrontMenu({ store, categoryGroups }: StorefrontMenuProps) {
           id="menu"
           className="mx-auto max-w-[1180px] scroll-mt-40 px-4 py-9 sm:px-8 sm:py-14"
         >
-          <MenuSectionHeader totalProducts={totalProducts} />
+          <MenuSectionHeader
+            totalProducts={totalProducts}
+            language={language}
+          />
 
           {filteredGroups.length ? (
             <div className="space-y-12 sm:space-y-16">
@@ -187,6 +193,7 @@ export function StorefrontMenu({ store, categoryGroups }: StorefrontMenuProps) {
                         product={product}
                         currency={store.currency}
                         exchangeRate={store.exchangeRate}
+                        language={language}
                         onAdd={
                           store.orderingTable
                             ? () => {
@@ -214,7 +221,7 @@ export function StorefrontMenu({ store, categoryGroups }: StorefrontMenuProps) {
               ))}
             </div>
           ) : (
-            <EmptyMenu search={search} />
+            <EmptyMenu search={search} language={language} />
           )}
         </div>
 
@@ -222,6 +229,7 @@ export function StorefrontMenu({ store, categoryGroups }: StorefrontMenuProps) {
           <OrderCart
             store={localizedStore}
             entries={cartEntries}
+            language={language}
             onQuantityChange={changeQuantity}
             onOrderPlaced={() => setCart({})}
           />
@@ -231,6 +239,7 @@ export function StorefrontMenu({ store, categoryGroups }: StorefrontMenuProps) {
             product={customizing}
             currency={store.currency}
             exchangeRate={store.exchangeRate}
+            language={language}
             onClose={() => setCustomizing(null)}
             onAdd={(selectedOptions) => {
               const entryKey = `${customizing.id}:${selectedOptions
@@ -251,12 +260,13 @@ export function StorefrontMenu({ store, categoryGroups }: StorefrontMenuProps) {
           />
         ) : null}
 
-        <StoreFooter storeName={localizedStore.name} />
+        <StoreFooter storeName={localizedStore.name} language={language} />
       </div>
       <PromotionPopup
         storeKey={`${store.merchantSlug}:${store.storeSlug}`}
         storeName={store.name}
         promotion={store.promotion}
+        language={language}
       />
     </main>
   );

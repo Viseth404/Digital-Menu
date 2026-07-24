@@ -3,6 +3,10 @@
 import * as React from "react";
 import { PlusIcon, XIcon } from "lucide-react";
 import { formatStorePrice } from "@/features/stores/format";
+import {
+  STOREFRONT_COPY,
+  type StorefrontLanguage,
+} from "@/features/storefront/constants";
 import type { StorefrontProduct } from "@/features/storefront/types";
 
 export type SelectedProductOption = {
@@ -16,15 +20,18 @@ export function ProductCustomizer({
   product,
   currency,
   exchangeRate,
+  language,
   onClose,
   onAdd,
 }: {
   product: StorefrontProduct;
   currency: string;
   exchangeRate: number;
+  language: StorefrontLanguage;
   onClose: () => void;
   onAdd: (options: SelectedProductOption[]) => void;
 }) {
+  const copy = STOREFRONT_COPY[language];
   const [selected, setSelected] = React.useState<Record<string, string[]>>({});
   const [error, setError] = React.useState("");
   const choices = product.optionGroups.flatMap((group) =>
@@ -49,7 +56,9 @@ export function ProductCustomizer({
   function submit() {
     for (const group of product.optionGroups) {
       if ((selected[group.id]?.length ?? 0) < group.minSelections) {
-        setError(`Choose at least ${group.minSelections} from ${group.name}.`);
+        setError(
+          `${copy.chooseAtLeast} ${group.minSelections} ${copy.from} ${group.name}.`,
+        );
         return;
       }
     }
@@ -68,7 +77,7 @@ export function ProductCustomizer({
         <header className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#2E7D32]">
-              Customize your dish
+              {copy.customizeDish}
             </p>
             <h2 id="customizer-title" className="mt-1 text-2xl font-bold">
               {product.name}
@@ -77,7 +86,7 @@ export function ProductCustomizer({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close customization"
+            aria-label={copy.closeCustomization}
             className="grid size-10 place-items-center rounded-full border text-[#7A6A52] hover:bg-[#F8F3E8]"
           >
             <XIcon className="size-4" />
@@ -93,8 +102,8 @@ export function ProductCustomizer({
                 <legend className="flex w-full items-center justify-between gap-3 font-bold">
                   <span>{group.name}</span>
                   <span className="rounded-full bg-[#F8F3E8] px-2.5 py-1 text-[0.68rem] font-semibold text-[#7A6A52]">
-                    {group.required ? "Required" : "Optional"} · up to{" "}
-                    {group.maxSelections}
+                    {group.required ? copy.required : copy.optional} ·{" "}
+                    {copy.upTo} {group.maxSelections}
                   </span>
                 </legend>
                 <div className="mt-2 grid gap-2">
@@ -167,7 +176,7 @@ export function ProductCustomizer({
           className="mt-6 flex h-13 w-full items-center justify-center gap-2 rounded-xl border border-[#D4AF37]/70 bg-[#155D32] px-5 font-bold text-white shadow-lg transition hover:bg-[#2E7D32] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
         >
           <PlusIcon className="size-5" />
-          Add to order · {formatStorePrice(total, currency, exchangeRate)}
+          {copy.addToOrder} · {formatStorePrice(total, currency, exchangeRate)}
         </button>
       </div>
     </div>
