@@ -11,7 +11,12 @@ export async function GET(request: NextRequest) {
       UserRole.STAFF,
     ]);
     const stores = await prisma.store.findMany({
-      where: { merchant: { members: { some: { userId: user.id } } } },
+      where: {
+        merchant: {
+          deletedAt: null,
+          members: { some: { userId: user.id } },
+        },
+      },
       include: {
         merchant: {
           select: {

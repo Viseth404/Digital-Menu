@@ -34,6 +34,7 @@ export function writeAdminAudit(
       targetName: input.targetName,
       details: input.details,
       ipAddress: getRequestIp(input.request),
+      userAgent: input.request.headers.get("user-agent")?.slice(0, 500) ?? null,
     },
   });
 }

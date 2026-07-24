@@ -16,6 +16,7 @@ export const appConfig = {
     adminOrders: "/admin/orders",
     adminAudit: "/admin/audit",
     adminSystem: "/admin/system",
+    adminOperations: "/admin/operations",
     adminAdministrators: "/admin/administrators",
     adminProfile: "/admin/profile",
     merchantStores: "/merchant/stores",

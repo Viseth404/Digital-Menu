@@ -21,12 +21,28 @@ export async function getSessionUserFromToken(
 
   const session = await prisma.session.findUnique({
     where: { tokenHash: hashSessionToken(token) },
-    include: { user: { select: { ...publicUser, isActive: true } } },
+    include: {
+      user: { select: { ...publicUser, isActive: true, deletedAt: true } },
+    },
   });
 
-  if (!session || session.expiresAt <= new Date() || !session.user.isActive) {
+  if (
+    !session ||
+    session.expiresAt <= new Date() ||
+    session.revokedAt ||
+    !session.user.isActive ||
+    session.user.deletedAt
+  ) {
     if (session) await prisma.session.delete({ where: { id: session.id } });
     return null;
+  }
+
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+  if (session.lastSeenAt < fiveMinutesAgo) {
+    await prisma.session.update({
+      where: { id: session.id },
+      data: { lastSeenAt: new Date() },
+    });
   }
 
   const { id, name, email, role } = session.user;

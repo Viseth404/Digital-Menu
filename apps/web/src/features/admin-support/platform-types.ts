@@ -54,6 +54,7 @@ export type AuditEntry = {
   targetName: string | null;
   details: unknown;
   ipAddress: string | null;
+  userAgent: string | null;
   createdAt: string;
   admin: { name: string; email: string };
 };

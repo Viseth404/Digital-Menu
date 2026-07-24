@@ -38,7 +38,12 @@ export async function POST(request: NextRequest) {
     await prisma.$transaction([
       prisma.user.update({
         where: { id: sessionUser.id },
-        data: { passwordHash: hashPassword(newPassword) },
+        data: {
+          passwordHash: hashPassword(newPassword),
+          passwordChangedAt: new Date(),
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+        },
       }),
       prisma.session.deleteMany({
         where: {

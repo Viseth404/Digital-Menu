@@ -48,6 +48,11 @@ const navigationByRole: Record<UserRole, NavigationItem[]> = {
       icon: "orders",
     },
     {
+      label: "Operations",
+      href: appConfig.routes.adminOperations,
+      icon: "system",
+    },
+    {
       label: "Audit log",
       href: appConfig.routes.adminAudit,
       icon: "audit",

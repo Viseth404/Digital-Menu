@@ -10,7 +10,11 @@ export function findPublicStore(merchantSlug: string, storeSlug: string) {
       slug: storeSlug,
       isPublished: true,
       status: StoreStatus.ACTIVE,
-      merchant: { slug: merchantSlug, status: MerchantStatus.ACTIVE },
+      merchant: {
+        slug: merchantSlug,
+        status: MerchantStatus.ACTIVE,
+        deletedAt: null,
+      },
     },
     include: {
       merchant: {

@@ -34,30 +34,34 @@ export function AuditLogViewer() {
   async function exportExcel() {
     await exportExcelWorkbook(
       `admin-audit-${new Date().toISOString().slice(0, 10)}.xlsx`,
-      [{
-        name: "Administrator Audit",
-        headers: [
-          "Timestamp",
-          "Administrator",
-          "Email",
-          "Action",
-          "Target Type",
-          "Target",
-          "IP Address",
-          "Details",
-        ],
-        rows: entries.map((entry) => [
-          new Date(entry.createdAt),
-          entry.admin.name,
-          entry.admin.email,
-          entry.action,
-          entry.targetType,
-          entry.targetName,
-          entry.ipAddress,
-          JSON.stringify(entry.details ?? {}),
-        ]),
-        dateColumns: [0],
-      }],
+      [
+        {
+          name: "Administrator Audit",
+          headers: [
+            "Timestamp",
+            "Administrator",
+            "Email",
+            "Action",
+            "Target Type",
+            "Target",
+            "IP Address",
+            "Device",
+            "Details",
+          ],
+          rows: entries.map((entry) => [
+            new Date(entry.createdAt),
+            entry.admin.name,
+            entry.admin.email,
+            entry.action,
+            entry.targetType,
+            entry.targetName,
+            entry.ipAddress,
+            entry.userAgent,
+            JSON.stringify(entry.details ?? {}),
+          ]),
+          dateColumns: [0],
+        },
+      ],
     );
   }
 
@@ -132,7 +136,12 @@ export function AuditLogViewer() {
                       </p>
                     </td>
                     <td className="px-5 py-4 text-xs">
-                      {entry.ipAddress ?? "Local/unknown"}
+                      <span className="block">
+                        {entry.ipAddress ?? "Local/unknown"}
+                      </span>
+                      <span className="line-clamp-1 max-w-48 text-muted-foreground">
+                        {entry.userAgent ?? "Unknown device"}
+                      </span>
                     </td>
                     <td className="max-w-80 px-5 py-4">
                       <code className="line-clamp-3 break-all text-xs text-muted-foreground">

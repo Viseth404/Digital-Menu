@@ -24,6 +24,9 @@ export async function POST(request: NextRequest, context: Context) {
         data: {
           passwordHash: hashPassword(temporaryPassword),
           isActive: true,
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+          passwordChangedAt: new Date(),
         },
       });
       await transaction.session.deleteMany({ where: { userId } });
