@@ -3,6 +3,7 @@
 import * as React from "react";
 import {
   CheckCircle2Icon,
+  ChevronUpIcon,
   MinusIcon,
   PlusIcon,
   ReceiptTextIcon,
@@ -20,6 +21,7 @@ import {
 import { createPublicOrder } from "@/features/orders/orders-api";
 import type { StoreOrder } from "@/features/orders/types";
 import { formatStorePrice } from "@/features/stores/format";
+import { createStorefrontStyle } from "@/features/storefront/utils";
 import type { StorefrontProduct, StorefrontStore } from "../types";
 
 export type CartEntry = {
@@ -46,6 +48,11 @@ export function OrderCart({
   const total = entries.reduce(
     (sum, entry) => sum + Number(entry.product.price) * entry.quantity,
     0,
+  );
+  const formattedTotal = formatStorePrice(
+    total,
+    store.currency,
+    store.exchangeRate,
   );
 
   async function submitOrder() {
@@ -81,16 +88,38 @@ export function OrderCart({
 
   return (
     <Sheet>
-      <SheetTrigger className="fixed bottom-5 right-5 z-40 flex h-14 items-center gap-2 rounded-full bg-[var(--store-primary)] px-5 font-semibold text-[var(--store-on-primary)] shadow-xl transition hover:scale-[1.02] sm:bottom-8 sm:right-8">
-        <ShoppingBasketIcon className="size-5" />
-        Order
-        {itemCount ? (
-          <span className="grid size-6 place-items-center rounded-full bg-white/20 text-xs">
-            {itemCount}
+      <SheetTrigger
+        aria-label={
+          itemCount
+            ? `View order with ${itemCount} items, total ${formattedTotal}`
+            : "Open order basket"
+        }
+        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 right-4 z-50 flex min-h-16 items-center gap-3 rounded-2xl border-2 border-[#D4AF37] bg-[#155D32] px-4 py-2.5 text-left text-white shadow-[0_16px_40px_rgba(9,47,27,0.38)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#1b6b3b] hover:shadow-[0_20px_48px_rgba(9,47,27,0.44)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] motion-reduce:transition-none sm:bottom-8 sm:left-auto sm:right-8 sm:min-w-64 sm:rounded-full"
+      >
+        <span className="relative grid size-10 shrink-0 place-items-center rounded-full bg-white/12">
+          <ShoppingBasketIcon className="size-5" />
+          {itemCount ? (
+            <span className="absolute -right-1.5 -top-1.5 grid size-5 place-items-center rounded-full bg-[#D4AF37] text-[0.65rem] font-extrabold text-[#1B1B1B] ring-2 ring-[#155D32]">
+              {itemCount > 99 ? "99+" : itemCount}
+            </span>
+          ) : null}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-bold leading-tight">
+            {itemCount ? "View your order" : "Start your order"}
           </span>
-        ) : null}
+          <span className="mt-0.5 block truncate text-xs text-white/75">
+            {itemCount
+              ? `${itemCount} ${itemCount === 1 ? "item" : "items"} · ${formattedTotal}`
+              : `Ordering for table ${store.orderingTable?.number}`}
+          </span>
+        </span>
+        <ChevronUpIcon className="size-5 shrink-0 text-[#D4AF37]" />
       </SheetTrigger>
-      <SheetContent className="w-full gap-0 sm:max-w-md">
+      <SheetContent
+        style={createStorefrontStyle(store.primaryColor, store.accentColor)}
+        className="w-full gap-0 bg-[#FFFDF8] text-[#1B1B1B] sm:max-w-md"
+      >
         {invoice ? (
           <Invoice
             order={invoice}
@@ -183,11 +212,16 @@ export function OrderCart({
                 </span>
               </div>
               <Button
-                className="h-11 w-full bg-[var(--store-primary)] text-[var(--store-on-primary)] hover:opacity-90"
+                className="h-12 w-full rounded-xl border border-[#D4AF37]/70 bg-[var(--store-primary)] text-base font-bold text-[var(--store-on-primary)] shadow-[0_10px_24px_rgba(21,93,50,0.2)] hover:brightness-110 disabled:border-transparent disabled:bg-zinc-200 disabled:text-zinc-500 disabled:shadow-none"
                 disabled={!entries.length || submitting}
                 onClick={() => void submitOrder()}
               >
-                {submitting ? "Sending order…" : "Place order"}
+                <ShoppingBasketIcon />
+                {submitting
+                  ? "Sending order…"
+                  : entries.length
+                    ? `Place order · ${formattedTotal}`
+                    : "Add items to place order"}
               </Button>
             </div>
           </>
