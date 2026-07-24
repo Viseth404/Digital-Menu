@@ -175,50 +175,58 @@ function SalesTrend({ analytics }: { analytics: StoreAnalytics }) {
         </p>
       </div>
       <div
-        className="mt-6 flex h-56 min-w-0 items-end gap-1 sm:gap-1.5 md:gap-2"
-        role="img"
-        aria-label={`${analytics.trend.length}-day sales revenue chart`}
+        className="mt-6 max-w-full overflow-x-auto overscroll-x-contain pb-2 [scrollbar-width:thin]"
+        role="region"
+        aria-label={`${analytics.trend.length}-day sales revenue chart. Scroll horizontally to view all days.`}
+        tabIndex={0}
       >
-        {analytics.trend.map((point, index) => {
-          const height = point.revenue
-            ? Math.max(8, (point.revenue / maximum) * 100)
-            : 2;
-          const showMonthlyLabel =
-            !isMonthlyRange ||
-            index === 0 ||
-            index === analytics.trend.length - 1 ||
-            index % 5 === 0;
+        <div
+          className={`flex h-56 items-end gap-2 ${
+            isMonthlyRange ? "min-w-[720px]" : "min-w-full"
+          }`}
+          role="img"
+        >
+          {analytics.trend.map((point, index) => {
+            const height = point.revenue
+              ? Math.max(8, (point.revenue / maximum) * 100)
+              : 2;
+            const showMonthlyLabel =
+              !isMonthlyRange ||
+              index === 0 ||
+              index === analytics.trend.length - 1 ||
+              index % 5 === 0;
 
-          return (
-            <div
-              key={point.date}
-              className="group flex h-full min-w-0 flex-1 basis-0 flex-col justify-end"
-            >
-              <div className="relative flex flex-1 items-end">
-                <div
-                  className="w-full min-w-px rounded-t-sm bg-zinc-900 transition-colors hover:bg-zinc-700 motion-reduce:transition-none sm:rounded-t-md"
-                  style={{ height: `${height}%` }}
-                  title={`${formatDate(point.date)}: ${formatMoney(
-                    point.revenue,
-                    analytics.store.currency,
-                  )}, ${point.orders} orders`}
-                />
-                <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-zinc-950 px-2 py-1 text-xs text-white shadow-lg group-hover:block">
-                  {formatMoney(point.revenue, analytics.store.currency)} ·{" "}
-                  {point.orders} orders
-                </div>
-              </div>
-              <p
-                className={`mt-2 h-4 truncate text-center text-[9px] text-muted-foreground sm:text-[10px] ${
-                  showMonthlyLabel ? "" : "invisible"
-                }`}
-                aria-hidden={!showMonthlyLabel}
+            return (
+              <div
+                key={point.date}
+                className="group flex h-full min-w-0 flex-1 basis-0 flex-col justify-end"
               >
-                {showMonthlyLabel ? formatChartDate(point.date) : ""}
-              </p>
-            </div>
-          );
-        })}
+                <div className="relative flex flex-1 items-end">
+                  <div
+                    className="w-full min-w-px rounded-t-sm bg-zinc-900 transition-colors hover:bg-zinc-700 motion-reduce:transition-none sm:rounded-t-md"
+                    style={{ height: `${height}%` }}
+                    title={`${formatDate(point.date)}: ${formatMoney(
+                      point.revenue,
+                      analytics.store.currency,
+                    )}, ${point.orders} orders`}
+                  />
+                  <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-zinc-950 px-2 py-1 text-xs text-white shadow-lg group-hover:block">
+                    {formatMoney(point.revenue, analytics.store.currency)} ·{" "}
+                    {point.orders} orders
+                  </div>
+                </div>
+                <p
+                  className={`mt-2 h-4 truncate text-center text-[9px] text-muted-foreground sm:text-[10px] ${
+                    showMonthlyLabel ? "" : "invisible"
+                  }`}
+                  aria-hidden={!showMonthlyLabel}
+                >
+                  {showMonthlyLabel ? formatChartDate(point.date) : ""}
+                </p>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
