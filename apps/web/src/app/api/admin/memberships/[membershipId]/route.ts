@@ -47,20 +47,45 @@ export async function DELETE(request: NextRequest, context: Context) {
     const admin = await requireRequestUser(request, [UserRole.ADMIN]);
     const { membershipId } = await context.params;
     const membership = await getMembership(membershipId);
-    await assertOwnerRemains(membership, null);
+    if (membership.user.role === UserRole.ADMIN) {
+      throw new ApiException(
+        "Administrator accounts cannot be removed here",
+        400,
+      );
+    }
+
+    let removedMemberships = 0;
     await prisma.$transaction(async (transaction) => {
-      await transaction.merchantMember.delete({ where: { id: membershipId } });
+      const removed = await transaction.merchantMember.deleteMany({
+        where: { userId: membership.user.id },
+      });
+      removedMemberships = removed.count;
+      await transaction.session.deleteMany({
+        where: { userId: membership.user.id },
+      });
+      await transaction.user.update({
+        where: { id: membership.user.id },
+        data: { isActive: false },
+      });
       await writeAdminAudit(transaction, {
         adminId: admin.id,
-        action: "MEMBERSHIP_REMOVED",
-        targetType: "MEMBERSHIP",
-        targetId: membershipId,
-        targetName: `${membership.user.name} at ${membership.merchant.name}`,
-        details: { role: membership.role },
+        action: "MERCHANT_USER_REMOVED",
+        targetType: "USER",
+        targetId: membership.user.id,
+        targetName: membership.user.name,
+        details: {
+          email: membership.user.email,
+          requestedMembershipId: membershipId,
+          requestedMerchant: membership.merchant.name,
+          role: membership.role,
+          removedMemberships,
+          accountDisabled: true,
+          sessionsRevoked: true,
+        },
         request,
       });
     });
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, removedMemberships });
   } catch (error) {
     return handleApiError(error);
   }
@@ -70,7 +95,9 @@ function getMembership(id: string) {
   return prisma.merchantMember.findUniqueOrThrow({
     where: { id },
     include: {
-      user: { select: { name: true } },
+      user: {
+        select: { id: true, name: true, email: true, role: true },
+      },
       merchant: { select: { id: true, name: true } },
     },
   });

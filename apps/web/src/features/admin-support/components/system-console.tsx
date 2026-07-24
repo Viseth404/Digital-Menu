@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import {
   AlertTriangleIcon,
   CheckCircle2Icon,
@@ -8,16 +9,22 @@ import {
   HardDriveIcon,
   RefreshCwIcon,
   SettingsIcon,
+  Trash2Icon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getSystemHealth, updatePlatformSettings } from "../platform-api";
+import {
+  deleteOrphanedUpload,
+  getSystemHealth,
+  updatePlatformSettings,
+} from "../platform-api";
 import type { SystemHealth } from "../platform-types";
 
 export function SystemConsole() {
   const [health, setHealth] = React.useState<SystemHealth | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
+  const [deletingFile, setDeletingFile] = React.useState("");
   const [message, setMessage] = React.useState("");
 
   const load = React.useCallback(async () => {
@@ -60,6 +67,29 @@ export function SystemConsole() {
       );
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function deleteUpload(filename: string) {
+    if (
+      !window.confirm(
+        `Permanently delete unused image "${filename}"? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+
+    setDeletingFile(filename);
+    try {
+      await deleteOrphanedUpload(filename);
+      setMessage(`Unused image ${filename} deleted`);
+      await load();
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Unable to delete image",
+      );
+    } finally {
+      setDeletingFile("");
     }
   }
 
@@ -167,7 +197,6 @@ export function SystemConsole() {
             <Diagnostic
               label="Orphaned upload files"
               value={health.storage.orphanedFiles.length}
-              details={health.storage.orphanedFiles}
             />
             <Diagnostic
               label="Missing referenced images"
@@ -175,6 +204,52 @@ export function SystemConsole() {
               details={health.storage.missingFiles}
             />
           </div>
+          {health.storage.orphanedFiles.length ? (
+            <div className="mt-5 border-t pt-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h4 className="text-sm font-semibold">Unused images</h4>
+                  <p className="text-xs text-muted-foreground">
+                    {formatBytes(health.storage.orphanedBytes)} can be freed.
+                    Files are checked against current store and product data
+                    again before deletion.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 max-h-64 space-y-2 overflow-y-auto">
+                {health.storage.orphanedFiles.map((filename) => (
+                  <div
+                    key={filename}
+                    className="flex items-center gap-3 rounded-xl border p-3"
+                  >
+                    <Image
+                      src={`/uploads/${filename}`}
+                      alt=""
+                      width={40}
+                      height={40}
+                      unoptimized
+                      className="size-10 rounded-lg border object-cover"
+                    />
+                    <span className="min-w-0 flex-1 truncate text-xs">
+                      {filename}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      disabled={deletingFile === filename}
+                      onClick={() => void deleteUpload(filename)}
+                      aria-label={`Delete unused image ${filename}`}
+                    >
+                      <Trash2Icon />
+                      {deletingFile === filename ? "Deleting…" : "Delete"}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </section>
 
         <form

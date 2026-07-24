@@ -57,3 +57,51 @@ export async function PATCH(request: NextRequest, context: Context) {
     return handleApiError(error);
   }
 }
+
+export async function DELETE(request: NextRequest, context: Context) {
+  try {
+    const admin = await requireRequestUser(request, [UserRole.ADMIN]);
+    const { orderId } = await context.params;
+    const existing = await prisma.order.findUniqueOrThrow({
+      where: { id: orderId },
+      include: {
+        store: {
+          select: {
+            id: true,
+            name: true,
+            merchant: { select: { id: true, name: true } },
+          },
+        },
+        table: { select: { number: true } },
+        items: { select: { id: true } },
+      },
+    });
+
+    await prisma.$transaction(async (transaction) => {
+      await transaction.order.delete({ where: { id: orderId } });
+      await writeAdminAudit(transaction, {
+        adminId: admin.id,
+        action: "ORDER_DELETED",
+        targetType: "ORDER",
+        targetId: orderId,
+        targetName: `#${orderId.slice(-8).toUpperCase()}`,
+        details: {
+          merchantId: existing.store.merchant.id,
+          merchant: existing.store.merchant.name,
+          storeId: existing.store.id,
+          store: existing.store.name,
+          table: existing.table.number,
+          status: existing.status,
+          subtotal: existing.subtotal.toString(),
+          currency: existing.currency,
+          itemCount: existing.items.length,
+        },
+        request,
+      });
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return handleApiError(error);
+  }
+}

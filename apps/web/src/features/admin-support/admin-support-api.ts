@@ -59,9 +59,12 @@ export function updateMembershipRole(
 }
 
 export function deleteMembership(membershipId: string) {
-  return apiRequest<{ success: true }>(`/admin/memberships/${membershipId}`, {
-    method: "DELETE",
-  });
+  return apiRequest<{ success: true; removedMemberships: number }>(
+    `/admin/memberships/${membershipId}`,
+    {
+      method: "DELETE",
+    },
+  );
 }
 
 export function rotateStoreQrTokens(storeId: string) {
