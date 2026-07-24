@@ -16,6 +16,14 @@ export const STORE_THEME = {
   hexColorPattern: "^#[0-9A-Fa-f]{6}$",
 } as const;
 
+export const STORE_COLOR_PRESETS = [
+  { name: "Palm & Sand", primary: "#155D32", accent: "#F8F3E8" },
+  { name: "Angkor Gold", primary: "#8A5A12", accent: "#FFF7E1" },
+  { name: "Lotus Rose", primary: "#9D3E5B", accent: "#FFF0F4" },
+  { name: "Mekong Blue", primary: "#155E75", accent: "#ECFEFF" },
+  { name: "Charcoal", primary: "#27272A", accent: "#F4F4F5" },
+] as const;
+
 export const IMAGE_ACCEPT = "image/jpeg,image/png,image/webp,image/gif";
 
 export const PROMOTION_RULES = {
