@@ -1,10 +1,12 @@
-import { readdir, stat } from "node:fs/promises";
-import path from "node:path";
 import { UserRole } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { handleApiError } from "@/lib/server/api-response";
 import { prisma } from "@/lib/server/prisma";
 import { requireRequestUser } from "@/lib/server/session";
+import {
+  getReferencedUploadUrls,
+  inspectUploadStorage,
+} from "@/lib/server/upload-storage";
 
 export async function GET(request: NextRequest) {
   try {
@@ -40,8 +42,8 @@ export async function GET(request: NextRequest) {
           createdAt: { lt: staleDate },
         },
       }),
-      getReferencedImages(),
-      inspectUploads(),
+      getReferencedUploadUrls(),
+      inspectUploadStorage(),
     ]);
     const referenced = new Set(imageReferences);
     const available = new Set(
@@ -50,6 +52,9 @@ export async function GET(request: NextRequest) {
     const orphanedFiles = storage.files
       .filter((file) => !referenced.has(`/uploads/${file.name}`))
       .map((file) => file.name);
+    const orphanedBytes = storage.files
+      .filter((file) => !referenced.has(`/uploads/${file.name}`))
+      .reduce((total, file) => total + file.size, 0);
     const missingFiles = [...referenced]
       .filter((url) => !available.has(url))
       .map((url) => url.replace("/uploads/", ""));
@@ -72,6 +77,7 @@ export async function GET(request: NextRequest) {
         ),
         referencedFiles: referenced.size,
         orphanedFiles,
+        orphanedBytes,
         missingFiles,
       },
       data: {
@@ -93,35 +99,4 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return handleApiError(error);
   }
-}
-
-async function inspectUploads() {
-  const directory = path.join(process.cwd(), "public", "uploads");
-  try {
-    const names = (await readdir(directory)).filter(
-      (name) => name !== ".gitkeep",
-    );
-    const files = await Promise.all(
-      names.map(async (name) => ({
-        name,
-        size: (await stat(path.join(directory, name))).size,
-      })),
-    );
-    return { files };
-  } catch {
-    return { files: [] };
-  }
-}
-
-async function getReferencedImages() {
-  const [stores, products] = await Promise.all([
-    prisma.store.findMany({
-      select: { logoUrl: true, coverImageUrl: true },
-    }),
-    prisma.product.findMany({ select: { imageUrl: true } }),
-  ]);
-  return [
-    ...stores.flatMap((store) => [store.logoUrl, store.coverImageUrl]),
-    ...products.map((product) => product.imageUrl),
-  ].filter((value): value is string => Boolean(value?.startsWith("/uploads/")));
 }

@@ -28,6 +28,12 @@ export function updateAdminOrderStatus(orderId: string, status: string) {
   });
 }
 
+export function deleteAdminOrder(orderId: string) {
+  return apiRequest<{ success: true }>(`/admin/orders/${orderId}`, {
+    method: "DELETE",
+  });
+}
+
 export function getAuditEntries(search: string, signal?: AbortSignal) {
   const query = new URLSearchParams();
   if (search) query.set("search", search);
@@ -36,6 +42,13 @@ export function getAuditEntries(search: string, signal?: AbortSignal) {
 
 export function getSystemHealth(signal?: AbortSignal) {
   return apiRequest<SystemHealth>("/admin/system-health", { signal });
+}
+
+export function deleteOrphanedUpload(filename: string) {
+  return apiRequest<{ success: true }>(
+    `/admin/uploads/${encodeURIComponent(filename)}`,
+    { method: "DELETE" },
+  );
 }
 
 export function updatePlatformSettings(

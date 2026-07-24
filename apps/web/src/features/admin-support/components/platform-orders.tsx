@@ -5,12 +5,17 @@ import {
   ClipboardListIcon,
   FileSpreadsheetIcon,
   SearchIcon,
+  Trash2Icon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ORDER_STATUSES } from "@/features/orders/types";
 import { exportExcelWorkbook } from "@/lib/excel-export";
-import { getAdminOrders, updateAdminOrderStatus } from "../platform-api";
+import {
+  deleteAdminOrder,
+  getAdminOrders,
+  updateAdminOrderStatus,
+} from "../platform-api";
 import type { AdminOrder } from "../platform-types";
 
 export function PlatformOrdersManager() {
@@ -20,6 +25,7 @@ export function PlatformOrdersManager() {
   const [from, setFrom] = React.useState("");
   const [to, setTo] = React.useState("");
   const [loading, setLoading] = React.useState(true);
+  const [deletingId, setDeletingId] = React.useState("");
   const [message, setMessage] = React.useState("");
 
   React.useEffect(() => {
@@ -121,6 +127,30 @@ export function PlatformOrdersManager() {
         },
       ],
     );
+  }
+
+  async function deleteOrder(order: AdminOrder) {
+    const invoiceNumber = order.id.slice(-8).toUpperCase();
+    if (
+      !window.confirm(
+        `Permanently delete invoice #${invoiceNumber}? This removes the invoice and all of its line items and cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+
+    setDeletingId(order.id);
+    try {
+      await deleteAdminOrder(order.id);
+      setOrders((current) => current.filter((item) => item.id !== order.id));
+      setMessage(`Invoice #${invoiceNumber} deleted`);
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Unable to delete invoice",
+      );
+    } finally {
+      setDeletingId("");
+    }
   }
 
   return (
@@ -237,10 +267,24 @@ export function PlatformOrdersManager() {
                   Note: {order.note}
                 </p>
               ) : null}
-              <p className="flex justify-between font-semibold">
-                <span>Total</span>
-                <span>{formatMoney(order.subtotal, order.currency)}</span>
-              </p>
+              <div className="flex items-center justify-between gap-4">
+                <p className="flex flex-1 justify-between font-semibold">
+                  <span>Total</span>
+                  <span>{formatMoney(order.subtotal, order.currency)}</span>
+                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  disabled={deletingId === order.id}
+                  onClick={() => void deleteOrder(order)}
+                  aria-label={`Delete invoice ${order.id.slice(-8).toUpperCase()}`}
+                >
+                  <Trash2Icon />
+                  {deletingId === order.id ? "Deleting…" : "Delete"}
+                </Button>
+              </div>
             </article>
           ))}
         </div>

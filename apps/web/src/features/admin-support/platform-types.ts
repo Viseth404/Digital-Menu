@@ -66,6 +66,7 @@ export type SystemHealth = {
     uploadBytes: number;
     referencedFiles: number;
     orphanedFiles: string[];
+    orphanedBytes: number;
     missingFiles: string[];
   };
   data: {

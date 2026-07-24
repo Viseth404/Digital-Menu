@@ -214,13 +214,19 @@ export function MerchantSupportConsole() {
   }
 
   async function removeMembership(membershipId: string) {
-    if (!window.confirm("Remove this user from the merchant organization?")) {
+    if (
+      !window.confirm(
+        "Remove this merchant user? This disables their account, removes all merchant access, and signs them out on every device. This action cannot be undone from this screen.",
+      )
+    ) {
       return;
     }
     try {
-      await deleteMembership(membershipId);
+      const result = await deleteMembership(membershipId);
       await loadMerchants();
-      setMessage("Merchant membership removed");
+      setMessage(
+        `Merchant user removed. Account disabled, sessions revoked, and ${result.removedMemberships} membership${result.removedMemberships === 1 ? "" : "s"} removed.`,
+      );
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Unable to remove membership",
@@ -546,7 +552,7 @@ function MerchantDetail({
                   className="text-destructive"
                   onClick={() => onMembershipRemove(user.membershipId)}
                 >
-                  Remove
+                  Remove user
                 </Button>
                 <button
                   type="button"
