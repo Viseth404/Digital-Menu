@@ -14,7 +14,7 @@ export async function GET(request: NextRequest, context: Context) {
         where: { storeId },
         include: {
           table: { select: { id: true, number: true, name: true } },
-          items: true,
+          items: { include: { options: true } },
         },
         orderBy: { createdAt: "desc" },
         take: 100,

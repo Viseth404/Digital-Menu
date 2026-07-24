@@ -35,6 +35,12 @@ export type OrderItem = {
   unitPrice: string;
   quantity: number;
   lineTotal: string;
+  options: Array<{
+    id: string;
+    groupName: string;
+    optionName: string;
+    priceDelta: string;
+  }>;
 };
 
 export type StoreOrder = {
@@ -52,5 +58,9 @@ export type CreateOrderInput = {
   tableId: string;
   tableToken: string;
   note?: string;
-  items: Array<{ productId: string; quantity: number }>;
+  items: Array<{
+    productId: string;
+    quantity: number;
+    selectedOptionIds?: string[];
+  }>;
 };

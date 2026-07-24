@@ -72,8 +72,10 @@ export async function PATCH(request: NextRequest, context: StoreRouteContext) {
 
     const data: Prisma.StoreUpdateInput = {
       name: merchant.name,
+      nameKh: readNullableString(body, "nameKh"),
       slug: merchant.slug,
       description: readNullableString(body, "description"),
+      descriptionKh: readNullableString(body, "descriptionKh"),
       address: readNullableString(body, "address"),
       phone: merchant.phone,
       email: merchant.contactEmail,

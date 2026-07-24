@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import {
+  CircleOffIcon,
   ImageIcon,
   PackageOpenIcon,
   PencilIcon,
@@ -229,12 +230,20 @@ export function ProductManager() {
                   </p>
                 </div>
                 <div className="mt-4 flex items-center justify-between border-t pt-3">
-                  <button
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={product.isAvailable ? "outline" : "default"}
                     onClick={() => toggleAvailability(product)}
-                    className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                    className={
+                      product.isAvailable
+                        ? "text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        : ""
+                    }
                   >
-                    {product.isAvailable ? "Hide from store" : "Show in store"}
-                  </button>
+                    <CircleOffIcon />
+                    {product.isAvailable ? "Mark sold out" : "Back on menu"}
+                  </Button>
                   <div className="flex gap-1">
                     <Button
                       size="icon-sm"

@@ -37,7 +37,9 @@ export async function POST(request: NextRequest, context: Context) {
       data: {
         storeId,
         name: readString(body, "name", { min: 2 })!,
+        nameKh: readNullableString(body, "nameKh"),
         description: readNullableString(body, "description"),
+        descriptionKh: readNullableString(body, "descriptionKh"),
         isActive: readBoolean(body, "isActive") ?? true,
         sortOrder: Math.round(readNonNegativeNumber(body, "sortOrder") ?? 0),
       },

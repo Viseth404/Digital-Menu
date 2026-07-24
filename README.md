@@ -17,10 +17,13 @@ authentication, and database access all live in `apps/web`.
 - Search and horizontally scrollable category navigation
 - Products grouped by category with availability and image fallbacks
 - Store-controlled currency and price formatting
+- English and Khmer menu switching with per-language store, category, product,
+  and modifier content
 - Light and dark themes
 - Store information drawer
 - Optional promotion popup with title, message, and image
 - Public table ordering through QR-linked menus
+- Product choices and add-ons with required and multi-select rules
 
 Published menus use this route:
 
@@ -34,8 +37,10 @@ Published menus use this route:
 - Seven-day and 30-day sales trends
 - Store profile, branding, publication, and promotion settings
 - Product and category management
+- Product modifier groups, add-on pricing, and prominent sold-out controls
 - Dining-table and QR-code management
-- Order tracking and status updates
+- Live order alerts, order tracking, and status updates
+- Kitchen board organized by preparation stage
 - Multiple stores under one merchant organization
 - Owner, manager, and staff membership roles
 

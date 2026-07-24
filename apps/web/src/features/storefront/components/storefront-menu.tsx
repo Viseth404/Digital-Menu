@@ -27,7 +27,9 @@ import {
   type CartEntry,
 } from "@/features/storefront/components/order-cart";
 import { PromotionPopup } from "@/features/storefront/components/promotion-popup";
+import { ProductCustomizer } from "@/features/storefront/components/product-customizer";
 import { STOREFRONT_PALETTE } from "@/features/storefront/constants";
+import type { StorefrontProduct } from "@/features/storefront/types";
 
 type StorefrontMenuProps = {
   store: StorefrontStore;
@@ -38,11 +40,46 @@ export function StorefrontMenu({ store, categoryGroups }: StorefrontMenuProps) {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState(ALL_CATEGORIES);
   const [darkMode, setDarkMode] = useState(false);
+  const [language, setLanguage] = useState<"en" | "km">("en");
   const [cart, setCart] = useState<Record<string, CartEntry>>({});
+  const [customizing, setCustomizing] = useState<StorefrontProduct | null>(
+    null,
+  );
 
+  const localizedGroups = useMemo(
+    () =>
+      categoryGroups.map((group) => ({
+        ...group,
+        name: language === "km" && group.nameKh ? group.nameKh : group.name,
+        products: group.products.map((product) => ({
+          ...product,
+          name:
+            language === "km" && product.nameKh ? product.nameKh : product.name,
+          description:
+            language === "km" && product.descriptionKh
+              ? product.descriptionKh
+              : product.description,
+          optionGroups: product.optionGroups.map((optionGroup) => ({
+            ...optionGroup,
+            name:
+              language === "km" && optionGroup.nameKh
+                ? optionGroup.nameKh
+                : optionGroup.name,
+            options: optionGroup.options.map((option) => ({
+              ...option,
+              name:
+                language === "km" && option.nameKh
+                  ? option.nameKh
+                  : option.name,
+            })),
+          })),
+        })),
+      })),
+    [categoryGroups, language],
+  );
   const filteredGroups = useMemo(
-    () => filterStorefrontCategories(categoryGroups, activeCategory, search),
-    [activeCategory, categoryGroups, search],
+    () => filterStorefrontCategories(localizedGroups, activeCategory, search),
+    [activeCategory, localizedGroups, search],
   );
   const totalProducts = countProducts(categoryGroups);
   const palette = darkMode ? STOREFRONT_PALETTE.dark : STOREFRONT_PALETTE.light;
@@ -54,17 +91,25 @@ export function StorefrontMenu({ store, categoryGroups }: StorefrontMenuProps) {
     "--menu-muted": palette.muted,
   } as CSSProperties;
   const cartEntries = Object.values(cart);
+  const localizedStore = {
+    ...store,
+    name: language === "km" && store.nameKh ? store.nameKh : store.name,
+    description:
+      language === "km" && store.descriptionKh
+        ? store.descriptionKh
+        : store.description,
+  };
 
-  function changeQuantity(productId: string, quantity: number) {
+  function changeQuantity(entryKey: string, quantity: number) {
     setCart((current) => {
       if (quantity <= 0) {
         const next = { ...current };
-        delete next[productId];
+        delete next[entryKey];
         return next;
       }
-      const entry = current[productId];
+      const entry = current[entryKey];
       return entry
-        ? { ...current, [productId]: { ...entry, quantity } }
+        ? { ...current, [entryKey]: { ...entry, quantity } }
         : current;
     });
   }
@@ -76,9 +121,13 @@ export function StorefrontMenu({ store, categoryGroups }: StorefrontMenuProps) {
     >
       <div className="mx-auto max-w-[1440px] bg-[var(--menu-bg)] lg:my-6 lg:overflow-hidden lg:rounded-[2rem] lg:shadow-[0_24px_80px_rgba(77,55,23,0.12)]">
         <StoreHero
-          store={store}
+          store={localizedStore}
           darkMode={darkMode}
           onToggleTheme={() => setDarkMode((value) => !value)}
+          language={language}
+          onToggleLanguage={() =>
+            setLanguage((value) => (value === "en" ? "km" : "en"))
+          }
         />
 
         <div className="sticky top-0 z-30 border-b border-[#7A6A52]/15 bg-[var(--menu-bg)]/95 pt-14 shadow-[0_8px_28px_rgba(75,55,24,0.04)] backdrop-blur-xl sm:pt-16">
@@ -88,8 +137,8 @@ export function StorefrontMenu({ store, categoryGroups }: StorefrontMenuProps) {
               onChange={setSearch}
               infoButton={
                 <StoreInfoDrawer
-                  name={store.name}
-                  description={store.description}
+                  name={localizedStore.name}
+                  description={localizedStore.description}
                   address={store.address}
                   phone={store.phone}
                   email={store.email}
@@ -100,7 +149,7 @@ export function StorefrontMenu({ store, categoryGroups }: StorefrontMenuProps) {
             />
             {categoryGroups.length ? (
               <CategoryTabs
-                groups={categoryGroups}
+                groups={localizedGroups}
                 activeCategory={activeCategory}
                 allCategoriesValue={ALL_CATEGORIES}
                 onChange={setActiveCategory}
@@ -140,15 +189,22 @@ export function StorefrontMenu({ store, categoryGroups }: StorefrontMenuProps) {
                         exchangeRate={store.exchangeRate}
                         onAdd={
                           store.orderingTable
-                            ? () =>
+                            ? () => {
+                                if (product.optionGroups.length) {
+                                  setCustomizing(product);
+                                  return;
+                                }
                                 setCart((current) => ({
                                   ...current,
                                   [product.id]: {
+                                    key: product.id,
                                     product,
+                                    selectedOptions: [],
                                     quantity:
                                       (current[product.id]?.quantity ?? 0) + 1,
                                   },
-                                }))
+                                }));
+                              }
                             : undefined
                         }
                       />
@@ -164,14 +220,38 @@ export function StorefrontMenu({ store, categoryGroups }: StorefrontMenuProps) {
 
         {store.orderingTable ? (
           <OrderCart
-            store={store}
+            store={localizedStore}
             entries={cartEntries}
             onQuantityChange={changeQuantity}
             onOrderPlaced={() => setCart({})}
           />
         ) : null}
+        {customizing ? (
+          <ProductCustomizer
+            product={customizing}
+            currency={store.currency}
+            exchangeRate={store.exchangeRate}
+            onClose={() => setCustomizing(null)}
+            onAdd={(selectedOptions) => {
+              const entryKey = `${customizing.id}:${selectedOptions
+                .map((option) => option.id)
+                .sort()
+                .join(",")}`;
+              setCart((current) => ({
+                ...current,
+                [entryKey]: {
+                  key: entryKey,
+                  product: customizing,
+                  selectedOptions,
+                  quantity: (current[entryKey]?.quantity ?? 0) + 1,
+                },
+              }));
+              setCustomizing(null);
+            }}
+          />
+        ) : null}
 
-        <StoreFooter storeName={store.name} />
+        <StoreFooter storeName={localizedStore.name} />
       </div>
       <PromotionPopup
         storeKey={`${store.merchantSlug}:${store.storeSlug}`}

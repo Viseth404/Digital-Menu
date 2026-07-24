@@ -20,7 +20,9 @@ export async function PATCH(request: NextRequest, context: Context) {
     const sortOrder = readNonNegativeNumber(body, "sortOrder");
     const data: Prisma.CategoryUpdateInput = {
       name: readString(body, "name", { min: 2, optional: true }),
+      nameKh: readNullableString(body, "nameKh"),
       description: readNullableString(body, "description"),
+      descriptionKh: readNullableString(body, "descriptionKh"),
       isActive: readBoolean(body, "isActive"),
       sortOrder: sortOrder === undefined ? undefined : Math.round(sortOrder),
     };

@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import {
+  BellRingIcon,
   ClipboardListIcon,
+  CookingPotIcon,
   FileSpreadsheetIcon,
   PlusIcon,
   RefreshCwIcon,
@@ -30,7 +32,7 @@ import {
 } from "../types";
 import { TableQrCard } from "./table-qr-card";
 
-type View = "orders" | "tables";
+type View = "orders" | "kitchen" | "tables";
 
 export function OrdersManager() {
   const [store, setStore] = React.useState<Store | null>(null);
@@ -40,6 +42,8 @@ export function OrdersManager() {
   const [loading, setLoading] = React.useState(true);
   const [message, setMessage] = React.useState("");
   const [origin, setOrigin] = React.useState("");
+  const [unreadOrders, setUnreadOrders] = React.useState(0);
+  const knownOrderIds = React.useRef<Set<string>>(new Set());
 
   React.useEffect(() => setOrigin(window.location.origin), []);
   React.useEffect(() => {
@@ -64,6 +68,9 @@ export function OrdersManager() {
       ]);
       setTables(tableData);
       setOrders(orderData);
+      if (!knownOrderIds.current.size) {
+        knownOrderIds.current = new Set(orderData.map((order) => order.id));
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to load");
     } finally {
@@ -74,6 +81,60 @@ export function OrdersManager() {
   React.useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  React.useEffect(() => {
+    if (!store) return;
+
+    const poll = async () => {
+      if (document.visibilityState === "hidden") return;
+      try {
+        const orderData = await getStoreOrders(store.id);
+        const newOrders = orderData.filter(
+          (order) => !knownOrderIds.current.has(order.id),
+        );
+        knownOrderIds.current = new Set(orderData.map((order) => order.id));
+        setOrders(orderData);
+        if (newOrders.length) {
+          setUnreadOrders((count) => count + newOrders.length);
+          playOrderAlert();
+          if (
+            "Notification" in window &&
+            Notification.permission === "granted"
+          ) {
+            const newest = newOrders[0];
+            new Notification(
+              `${newOrders.length} new restaurant order${newOrders.length === 1 ? "" : "s"}`,
+              {
+                body: `Table ${newest.table.number} · ${newest.items.length} item${newest.items.length === 1 ? "" : "s"}`,
+              },
+            );
+          }
+        }
+      } catch {
+        // Keep the current board visible when a background refresh fails.
+      }
+    };
+
+    const timer = window.setInterval(() => void poll(), 5_000);
+    return () => window.clearInterval(timer);
+  }, [store]);
+
+  React.useEffect(() => {
+    if (view === "orders" || view === "kitchen") setUnreadOrders(0);
+  }, [view]);
+
+  async function enableNotifications() {
+    if (!("Notification" in window)) {
+      setMessage("Browser notifications are not supported on this device");
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    setMessage(
+      permission === "granted"
+        ? "New-order sound and browser notifications enabled"
+        : "Notification permission was not enabled",
+    );
+  }
 
   async function addTable(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -217,6 +278,12 @@ export function OrdersManager() {
           <div className="flex flex-wrap gap-2">
             <Button
               className="bg-white text-zinc-950 hover:bg-white/90"
+              onClick={() => void enableNotifications()}
+            >
+              <BellRingIcon /> Enable alerts
+            </Button>
+            <Button
+              className="bg-white text-zinc-950 hover:bg-white/90"
               disabled={!orders.length}
               onClick={() => void exportOrders()}
             >
@@ -239,6 +306,18 @@ export function OrdersManager() {
           icon={ClipboardListIcon}
         >
           Orders
+          {unreadOrders ? (
+            <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] text-white">
+              {unreadOrders}
+            </span>
+          ) : null}
+        </ViewButton>
+        <ViewButton
+          active={view === "kitchen"}
+          onClick={() => setView("kitchen")}
+          icon={CookingPotIcon}
+        >
+          Kitchen board
         </ViewButton>
         <ViewButton
           active={view === "tables"}
@@ -290,6 +369,8 @@ export function OrdersManager() {
             <EmptyState text="Add your first table to generate its ordering QR code." />
           )}
         </>
+      ) : view === "kitchen" ? (
+        <KitchenBoard orders={orders} onStatusChange={changeStatus} />
       ) : orders.length ? (
         <div className="grid gap-4 xl:grid-cols-2">
           {orders.map((order) => (
@@ -303,6 +384,98 @@ export function OrdersManager() {
       ) : (
         <EmptyState text="New customer orders will appear here." />
       )}
+    </div>
+  );
+}
+
+function KitchenBoard({
+  orders,
+  onStatusChange,
+}: {
+  orders: StoreOrder[];
+  onStatusChange: (order: StoreOrder, status: OrderStatus) => Promise<void>;
+}) {
+  const columns = ORDER_FLOW.slice(0, 4);
+  return (
+    <div className="grid min-w-0 gap-4 xl:grid-cols-4">
+      {columns.map((status) => {
+        const columnOrders = orders.filter((order) => order.status === status);
+        const nextStatus = ORDER_FLOW[ORDER_FLOW.indexOf(status) + 1];
+        return (
+          <section
+            key={status}
+            className="min-w-0 rounded-2xl border bg-muted/35 p-3"
+          >
+            <header className="mb-3 flex items-center justify-between px-1">
+              <h3 className="text-sm font-bold">{formatStatus(status)}</h3>
+              <span className="grid size-6 place-items-center rounded-full bg-background text-xs font-bold shadow-sm">
+                {columnOrders.length}
+              </span>
+            </header>
+            <div className="space-y-3">
+              {columnOrders.map((order) => (
+                <article
+                  key={order.id}
+                  className={`rounded-xl border bg-card p-4 shadow-sm ${
+                    status === "PENDING"
+                      ? "border-amber-300 ring-2 ring-amber-100"
+                      : ""
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-lg font-extrabold">
+                        Table {order.table.number}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatElapsed(order.createdAt)}
+                      </p>
+                    </div>
+                    <span className="text-[10px] font-semibold text-muted-foreground">
+                      #{order.id.slice(-6).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="my-3 space-y-2 border-y py-3">
+                    {order.items.map((item) => (
+                      <div key={item.id} className="text-sm">
+                        <p className="font-semibold">
+                          {item.quantity} × {item.productName}
+                        </p>
+                        {item.options.length ? (
+                          <p className="text-xs text-muted-foreground">
+                            {item.options
+                              .map((option) => option.optionName)
+                              .join(" · ")}
+                          </p>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                  {order.note ? (
+                    <p className="mb-3 rounded-lg bg-amber-50 p-2 text-xs font-medium text-amber-900">
+                      {order.note}
+                    </p>
+                  ) : null}
+                  {nextStatus ? (
+                    <Button
+                      className="w-full"
+                      size="sm"
+                      onClick={() => void onStatusChange(order, nextStatus)}
+                    >
+                      Move to {formatStatus(nextStatus)}
+                    </Button>
+                  ) : null}
+                </article>
+              ))}
+              {!columnOrders.length ? (
+                <p className="rounded-xl border border-dashed p-5 text-center text-xs text-muted-foreground">
+                  No {formatStatus(status).toLowerCase()} orders
+                </p>
+              ) : null}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }
@@ -376,6 +549,11 @@ function OrderCard({
           >
             <span>
               {item.quantity} × {item.productName}
+              {item.options.length ? (
+                <span className="mt-0.5 block text-xs text-muted-foreground">
+                  {item.options.map((option) => option.optionName).join(" · ")}
+                </span>
+              ) : null}
             </span>
             <span>{formatMoney(item.lineTotal, order.currency)}</span>
           </div>
@@ -499,4 +677,41 @@ function formatMoney(value: string, currency: string) {
 
 function formatStatus(status: OrderStatus) {
   return status.charAt(0) + status.slice(1).toLowerCase();
+}
+
+function formatElapsed(value: string) {
+  const minutes = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(value).getTime()) / 60_000),
+  );
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} min waiting`;
+  return `${Math.floor(minutes / 60)} hr ${minutes % 60} min waiting`;
+}
+
+function playOrderAlert() {
+  try {
+    const AudioContextClass =
+      window.AudioContext ??
+      (
+        window as typeof window & {
+          webkitAudioContext?: typeof AudioContext;
+        }
+      ).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const context = new AudioContextClass();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.frequency.setValueAtTime(880, context.currentTime);
+    oscillator.frequency.setValueAtTime(1_120, context.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.12, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.35);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start();
+    oscillator.stop(context.currentTime + 0.35);
+    oscillator.addEventListener("ended", () => void context.close());
+  } catch {
+    // Audio alerts are a progressive enhancement.
+  }
 }

@@ -43,11 +43,29 @@ export function StoreSettingsFields({ store }: { store: Store }) {
   return (
     <>
       <SettingsSection title="Storefront branding">
+        <FormInput
+          label="Khmer store name"
+          name="nameKh"
+          lang="km"
+          defaultValue={store.nameKh ?? ""}
+          placeholder="ឈ្មោះហាងជាភាសាខ្មែរ"
+          required={false}
+        />
         <label className="grid gap-1.5 text-sm font-medium sm:col-span-2">
           Description
           <textarea
             name="description"
             defaultValue={store.description ?? ""}
+            rows={4}
+            className="rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+        </label>
+        <label className="grid gap-1.5 text-sm font-medium sm:col-span-2">
+          Khmer description
+          <textarea
+            name="descriptionKh"
+            lang="km"
+            defaultValue={store.descriptionKh ?? ""}
             rows={4}
             className="rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
@@ -188,7 +206,9 @@ export function buildStoreInput(form: FormData): UpdateStoreInput {
     String(form.get(name) ?? "").trim() || null;
 
   return {
+    nameKh: nullable("nameKh"),
     description: nullable("description"),
+    descriptionKh: nullable("descriptionKh"),
     address: nullable("address"),
     logoUrl: nullable("logoUrl"),
     coverImageUrl: nullable("coverImageUrl"),

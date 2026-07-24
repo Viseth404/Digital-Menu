@@ -28,7 +28,7 @@ export async function PATCH(request: NextRequest, context: Context) {
         data: { status },
         include: {
           table: { select: { id: true, number: true, name: true } },
-          items: true,
+          items: { include: { options: true } },
         },
       }),
     );

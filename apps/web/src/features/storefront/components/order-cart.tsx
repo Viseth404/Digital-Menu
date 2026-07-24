@@ -23,10 +23,13 @@ import type { StoreOrder } from "@/features/orders/types";
 import { formatStorePrice } from "@/features/stores/format";
 import { createStorefrontStyle } from "@/features/storefront/utils";
 import type { StorefrontProduct, StorefrontStore } from "../types";
+import type { SelectedProductOption } from "./product-customizer";
 
 export type CartEntry = {
+  key: string;
   product: StorefrontProduct;
   quantity: number;
+  selectedOptions: SelectedProductOption[];
 };
 
 export function OrderCart({
@@ -37,7 +40,7 @@ export function OrderCart({
 }: {
   store: StorefrontStore;
   entries: CartEntry[];
-  onQuantityChange: (productId: string, quantity: number) => void;
+  onQuantityChange: (entryKey: string, quantity: number) => void;
   onOrderPlaced: () => void;
 }) {
   const [note, setNote] = React.useState("");
@@ -46,7 +49,14 @@ export function OrderCart({
   const [invoice, setInvoice] = React.useState<StoreOrder | null>(null);
   const itemCount = entries.reduce((total, entry) => total + entry.quantity, 0);
   const total = entries.reduce(
-    (sum, entry) => sum + Number(entry.product.price) * entry.quantity,
+    (sum, entry) =>
+      sum +
+      (Number(entry.product.price) +
+        entry.selectedOptions.reduce(
+          (optionSum, option) => optionSum + option.priceDelta,
+          0,
+        )) *
+        entry.quantity,
     0,
   );
   const formattedTotal = formatStorePrice(
@@ -68,9 +78,10 @@ export function OrderCart({
           tableId: store.orderingTable.id,
           tableToken: store.orderingTable.token,
           note: note.trim() || undefined,
-          items: entries.map(({ product, quantity }) => ({
+          items: entries.map(({ product, quantity, selectedOptions }) => ({
             productId: product.id,
             quantity,
+            selectedOptionIds: selectedOptions.map((option) => option.id),
           })),
         },
       );
@@ -144,16 +155,24 @@ export function OrderCart({
 
               <div className="my-5 divide-y">
                 {entries.length ? (
-                  entries.map(({ product, quantity }) => (
-                    <div
-                      key={product.id}
-                      className="flex items-center gap-3 py-4"
-                    >
+                  entries.map(({ key, product, quantity, selectedOptions }) => (
+                    <div key={key} className="flex items-center gap-3 py-4">
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-semibold">{product.name}</p>
+                        {selectedOptions.length ? (
+                          <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                            {selectedOptions
+                              .map((option) => option.name)
+                              .join(" · ")}
+                          </p>
+                        ) : null}
                         <p className="text-sm text-[var(--store-primary)]">
                           {formatStorePrice(
-                            product.price,
+                            Number(product.price) +
+                              selectedOptions.reduce(
+                                (sum, option) => sum + option.priceDelta,
+                                0,
+                              ),
                             store.currency,
                             store.exchangeRate,
                           )}
@@ -162,9 +181,7 @@ export function OrderCart({
                       <div className="flex items-center rounded-full border">
                         <QuantityButton
                           label={`Remove one ${product.name}`}
-                          onClick={() =>
-                            onQuantityChange(product.id, quantity - 1)
-                          }
+                          onClick={() => onQuantityChange(key, quantity - 1)}
                         >
                           <MinusIcon />
                         </QuantityButton>
@@ -173,9 +190,7 @@ export function OrderCart({
                         </span>
                         <QuantityButton
                           label={`Add one ${product.name}`}
-                          onClick={() =>
-                            onQuantityChange(product.id, quantity + 1)
-                          }
+                          onClick={() => onQuantityChange(key, quantity + 1)}
                         >
                           <PlusIcon />
                         </QuantityButton>
@@ -282,6 +297,13 @@ function Invoice({ order, onDone }: { order: StoreOrder; onDone: () => void }) {
             >
               <span>
                 {item.quantity} × {item.productName}
+                {item.options.length ? (
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                    {item.options
+                      .map((option) => option.optionName)
+                      .join(" · ")}
+                  </span>
+                ) : null}
               </span>
               <span>{formatInvoiceMoney(item.lineTotal, order.currency)}</span>
             </div>

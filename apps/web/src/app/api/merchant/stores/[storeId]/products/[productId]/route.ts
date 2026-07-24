@@ -4,6 +4,10 @@ import { ApiException, handleApiError } from "@/lib/server/api-response";
 import { prisma } from "@/lib/server/prisma";
 import { requireManagedProduct } from "@/features/stores/merchant-access";
 import {
+  productOptionInclude,
+  readProductOptionGroups,
+} from "@/features/stores/product-options";
+import {
   assertOptionalImageUrl,
   readBoolean,
   readNonNegativeNumber,
@@ -30,7 +34,9 @@ export async function PATCH(request: NextRequest, context: Context) {
     }
     const data: Prisma.ProductUpdateInput = {
       name: readString(body, "name", { min: 2, optional: true }),
+      nameKh: readNullableString(body, "nameKh"),
       description: readNullableString(body, "description"),
+      descriptionKh: readNullableString(body, "descriptionKh"),
       price: readNumber(body, "price"),
       imageUrl: assertOptionalImageUrl(
         readNullableString(body, "imageUrl"),
@@ -47,12 +53,22 @@ export async function PATCH(request: NextRequest, context: Context) {
           : categoryId
             ? { connect: { id: categoryId } }
             : { disconnect: true },
+      optionGroups:
+        body.optionGroups === undefined
+          ? undefined
+          : {
+              deleteMany: {},
+              create: readProductOptionGroups(body.optionGroups) ?? [],
+            },
     };
     return NextResponse.json(
       await prisma.product.update({
         where: { id: productId },
         data,
-        include: { category: { select: { id: true, name: true } } },
+        include: {
+          category: { select: { id: true, name: true } },
+          ...productOptionInclude,
+        },
       }),
     );
   } catch (error) {

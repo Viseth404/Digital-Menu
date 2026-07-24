@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import {
   ImageIcon,
+  LanguagesIcon,
   MoonIcon,
   PlusIcon,
   SearchIcon,
@@ -20,10 +21,14 @@ export function StoreHero({
   store,
   darkMode,
   onToggleTheme,
+  language,
+  onToggleLanguage,
 }: {
   store: StorefrontStore;
   darkMode: boolean;
   onToggleTheme: () => void;
+  language: "en" | "km";
+  onToggleLanguage: () => void;
 }) {
   return (
     <header className="relative bg-[var(--menu-bg)] pt-3 sm:pt-5 lg:pt-6">
@@ -78,7 +83,20 @@ export function StoreHero({
         </div>
 
         <div className="relative mx-auto flex min-h-[17rem] max-w-[1180px] flex-col px-4 py-4 sm:min-h-[22rem] sm:px-7 sm:py-6 lg:min-h-[25rem]">
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onToggleLanguage}
+              aria-label={
+                language === "en"
+                  ? "Show menu in Khmer"
+                  : "Show menu in English"
+              }
+              className="flex h-11 items-center gap-2 rounded-full border border-white/25 bg-[#102c1d]/45 px-4 text-sm font-bold text-white shadow-lg backdrop-blur-md transition hover:border-[#D4AF37]/70 hover:bg-[#102c1d]/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
+            >
+              <LanguagesIcon className="size-4" />
+              {language === "en" ? "ខ្មែរ" : "EN"}
+            </button>
             <button
               type="button"
               onClick={onToggleTheme}

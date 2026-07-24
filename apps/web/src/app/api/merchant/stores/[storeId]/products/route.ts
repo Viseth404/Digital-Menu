@@ -3,6 +3,10 @@ import { ApiException, handleApiError } from "@/lib/server/api-response";
 import { prisma } from "@/lib/server/prisma";
 import { requireManagedStore } from "@/features/stores/merchant-access";
 import {
+  productOptionInclude,
+  readProductOptionGroups,
+} from "@/features/stores/product-options";
+import {
   assertOptionalImageUrl,
   readBoolean,
   readNonNegativeNumber,
@@ -20,7 +24,10 @@ export async function GET(request: NextRequest, context: Context) {
     await requireManagedStore(request, storeId);
     const products = await prisma.product.findMany({
       where: { storeId },
-      include: { category: { select: { id: true, name: true } } },
+      include: {
+        category: { select: { id: true, name: true } },
+        ...productOptionInclude,
+      },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
     });
     return NextResponse.json(products);
@@ -46,7 +53,9 @@ export async function POST(request: NextRequest, context: Context) {
         storeId,
         categoryId,
         name: readString(body, "name", { min: 2 })!,
+        nameKh: readNullableString(body, "nameKh"),
         description: readNullableString(body, "description"),
+        descriptionKh: readNullableString(body, "descriptionKh"),
         price: readNumber(body, "price")!,
         imageUrl: assertOptionalImageUrl(
           readNullableString(body, "imageUrl"),
@@ -54,8 +63,14 @@ export async function POST(request: NextRequest, context: Context) {
         ),
         isAvailable: readBoolean(body, "isAvailable") ?? true,
         sortOrder: Math.round(readNonNegativeNumber(body, "sortOrder") ?? 0),
+        optionGroups: {
+          create: readProductOptionGroups(body.optionGroups) ?? [],
+        },
       },
-      include: { category: { select: { id: true, name: true } } },
+      include: {
+        category: { select: { id: true, name: true } },
+        ...productOptionInclude,
+      },
     });
     return NextResponse.json(product, { status: 201 });
   } catch (error) {

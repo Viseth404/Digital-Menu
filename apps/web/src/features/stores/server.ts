@@ -25,7 +25,22 @@ export function findPublicStore(merchantSlug: string, storeSlug: string) {
         where: { isAvailable: true },
         include: {
           category: {
-            select: { id: true, name: true, isActive: true, sortOrder: true },
+            select: {
+              id: true,
+              name: true,
+              nameKh: true,
+              isActive: true,
+              sortOrder: true,
+            },
+          },
+          optionGroups: {
+            orderBy: { sortOrder: "asc" },
+            include: {
+              options: {
+                where: { isAvailable: true },
+                orderBy: { sortOrder: "asc" },
+              },
+            },
           },
         },
         orderBy: [{ sortOrder: "asc" as const }, { createdAt: "asc" as const }],
@@ -54,15 +69,32 @@ export function findQrOrderingTable(
 type PublicProduct = {
   id: string;
   name: string;
+  nameKh: string | null;
   description: string | null;
+  descriptionKh: string | null;
   price: { toString(): string };
   imageUrl: string | null;
   category: {
     id: string;
     name: string;
+    nameKh: string | null;
     isActive: boolean;
     sortOrder: number;
   } | null;
+  optionGroups: Array<{
+    id: string;
+    name: string;
+    nameKh: string | null;
+    required: boolean;
+    minSelections: number;
+    maxSelections: number;
+    options: Array<{
+      id: string;
+      name: string;
+      nameKh: string | null;
+      priceDelta: { toString(): string };
+    }>;
+  }>;
 };
 
 export function groupPublicProducts(
@@ -76,6 +108,7 @@ export function groupPublicProducts(
     const group = groups.get(id) ?? {
       id,
       name: category?.name ?? "Other items",
+      nameKh: category?.nameKh ?? null,
       order: category?.sortOrder ?? Number.MAX_SAFE_INTEGER,
       products: [],
     };
@@ -83,9 +116,18 @@ export function groupPublicProducts(
     group.products.push({
       id: product.id,
       name: product.name,
+      nameKh: product.nameKh,
       description: product.description,
+      descriptionKh: product.descriptionKh,
       price: product.price.toString(),
       imageUrl: product.imageUrl,
+      optionGroups: product.optionGroups.map((group) => ({
+        ...group,
+        options: group.options.map((option) => ({
+          ...option,
+          priceDelta: option.priceDelta.toString(),
+        })),
+      })),
     });
     groups.set(id, group);
   }

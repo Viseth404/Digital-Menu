@@ -28,7 +28,9 @@ export function CategoryEditor({
     try {
       await onSave({
         name: String(form.get("name")),
+        nameKh: String(form.get("nameKh") || "") || null,
         description: String(form.get("description") || "") || null,
+        descriptionKh: String(form.get("descriptionKh") || "") || null,
         sortOrder: Number(form.get("sortOrder")),
         isActive: form.get("isActive") === "on",
       });
@@ -70,11 +72,28 @@ export function CategoryEditor({
               placeholder="e.g. Cold drinks"
             />
           </Field>
+          <Field label="Khmer category name (optional)">
+            <Input
+              name="nameKh"
+              lang="km"
+              defaultValue={category?.nameKh ?? ""}
+              placeholder="ឧ. ភេសជ្ជៈត្រជាក់"
+            />
+          </Field>
           <Field label="Description">
             <textarea
               name="description"
               defaultValue={category?.description ?? ""}
               rows={4}
+              className="rounded-md border bg-transparent px-3 py-2 text-sm"
+            />
+          </Field>
+          <Field label="Khmer description (optional)">
+            <textarea
+              name="descriptionKh"
+              lang="km"
+              defaultValue={category?.descriptionKh ?? ""}
+              rows={3}
               className="rounded-md border bg-transparent px-3 py-2 text-sm"
             />
           </Field>
