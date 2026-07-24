@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import {
   ImageIcon,
+  LayoutGridIcon,
   LanguagesIcon,
   MoonIcon,
   PlusIcon,
@@ -218,6 +219,7 @@ export function CategoryTabs({
       <CategoryButton
         active={activeCategory === allCategoriesValue}
         label={copy.allMenu}
+        overview
         onClick={() => onChange(allCategoriesValue)}
       />
       {groups.map((group) => (
@@ -235,10 +237,12 @@ export function CategoryTabs({
 function CategoryButton({
   active,
   label,
+  overview = false,
   onClick,
 }: {
   active: boolean;
   label: string;
+  overview?: boolean;
   onClick: () => void;
 }) {
   return (
@@ -246,12 +250,13 @@ function CategoryButton({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`group/chip relative shrink-0 overflow-hidden rounded-full border px-4 py-2.5 text-sm font-semibold transition duration-300 motion-safe:hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${
+      className={`group/chip relative inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition duration-200 motion-safe:hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${
         active
-          ? "border-[var(--store-primary)] bg-[var(--store-primary)] text-[var(--store-on-primary)] shadow-[0_7px_18px_rgba(21,93,50,0.22)] hover:brightness-110 hover:shadow-[0_10px_24px_rgba(21,93,50,0.3)]"
-          : "border-[#7A6A52]/20 bg-[var(--menu-card)] text-[var(--menu-text)] hover:border-[#D4AF37]/70 hover:shadow-md"
+          ? "border-transparent bg-[var(--store-primary)] text-[var(--store-on-primary)] ring-1 ring-inset ring-white/20 hover:brightness-105"
+          : "border-[#7A6A52]/20 bg-[var(--menu-card)] text-[var(--menu-text)] shadow-[0_1px_2px_rgba(75,55,24,0.06)] hover:border-[var(--store-primary)]"
       }`}
     >
+      {overview ? <LayoutGridIcon className="size-3.5" /> : null}
       {label}
     </button>
   );

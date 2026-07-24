@@ -10,6 +10,7 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { showErrorToast, showSuccessToast } from "@/lib/toast";
 import {
   createStoreCategory,
   deleteStoreCategory,
@@ -59,7 +60,10 @@ export function CategoryManager() {
         : current.map((item) => (item.id === result.id ? result : item)),
     );
     setEditing(null);
-    setMessage(editing === "new" ? "Category created" : "Category updated");
+    showSuccessToast(
+      editing === "new" ? "Category created" : "Category updated",
+      result.name,
+    );
   }
   async function toggle(category: Category) {
     try {
@@ -69,9 +73,14 @@ export function CategoryManager() {
       setCategories((current) =>
         current.map((item) => (item.id === result.id ? result : item)),
       );
+      showSuccessToast(
+        result.isActive ? "Category is visible" : "Category hidden",
+        result.name,
+      );
     } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Unable to update category",
+      showErrorToast(
+        "Unable to update category",
+        error instanceof Error ? error.message : undefined,
       );
     }
   }
@@ -87,10 +96,14 @@ export function CategoryManager() {
       setCategories((current) =>
         current.filter((item) => item.id !== category.id),
       );
-      setMessage("Category deleted; its products are now uncategorized");
+      showSuccessToast(
+        "Category deleted",
+        "Its products are now uncategorized.",
+      );
     } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Unable to delete category",
+      showErrorToast(
+        "Unable to delete category",
+        error instanceof Error ? error.message : undefined,
       );
     }
   }

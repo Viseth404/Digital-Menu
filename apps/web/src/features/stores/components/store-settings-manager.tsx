@@ -3,7 +3,6 @@
 import * as React from "react";
 import Link from "next/link";
 import {
-  CheckIcon,
   CopyIcon,
   ExternalLinkIcon,
   Globe2Icon,
@@ -12,6 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getPublicStorePath } from "@/config/app-config";
+import { showErrorToast, showSuccessToast } from "@/lib/toast";
 import { getMerchantStores, updateMerchantStore } from "../stores-api";
 import { Store } from "../types";
 import { buildStoreInput, StoreSettingsFields } from "./settings-fields";
@@ -86,10 +86,14 @@ export function StoreSettingsManager() {
           store.id === updatedStore.id ? updatedStore : store,
         ),
       );
-      setMessage("Store settings saved");
+      showSuccessToast(
+        "Store settings saved",
+        "Your public storefront has been updated.",
+      );
     } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Unable to save store",
+      showErrorToast(
+        "Unable to save store",
+        error instanceof Error ? error.message : undefined,
       );
     } finally {
       setIsSaving(false);
@@ -98,7 +102,7 @@ export function StoreSettingsManager() {
 
   async function copyStoreLink() {
     await navigator.clipboard.writeText(publicUrl);
-    setMessage("Customer link copied");
+    showSuccessToast("Customer link copied");
   }
 
   return (
@@ -189,6 +193,15 @@ export function StoreSettingsManager() {
             </div>
           </section>
 
+          {message ? (
+            <p
+              role="alert"
+              className="rounded-lg border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+            >
+              {message}
+            </p>
+          ) : null}
+
           <form
             key={`${selectedStore.id}-${selectedStore.updatedAt}`}
             className="space-y-6"
@@ -197,11 +210,6 @@ export function StoreSettingsManager() {
             <StoreSettingsFields store={selectedStore} />
 
             <div className="flex items-center justify-end gap-3">
-              {message ? (
-                <p className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <CheckIcon className="size-4" /> {message}
-                </p>
-              ) : null}
               <Button type="submit" disabled={isSaving}>
                 {isSaving ? "Saving…" : "Save store settings"}
               </Button>

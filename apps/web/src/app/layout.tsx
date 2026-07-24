@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/toast";
 import { appConfig } from "@/config/app-config";
 import "./globals.css";
 
@@ -16,7 +17,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="font-sans">
       <body>
-        <TooltipProvider>{children}</TooltipProvider>
+        <Toaster>
+          <TooltipProvider>{children}</TooltipProvider>
+        </Toaster>
       </body>
     </html>
   );

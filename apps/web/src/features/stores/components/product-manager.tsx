@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { showErrorToast, showSuccessToast } from "@/lib/toast";
 import { formatStorePrice } from "../format";
 import {
   createStoreProduct,
@@ -85,9 +86,16 @@ export function ProductManager() {
       setProducts((current) =>
         current.map((item) => (item.id === updated.id ? updated : item)),
       );
+      showSuccessToast(
+        updated.isAvailable
+          ? "Item is back on the menu"
+          : "Item marked sold out",
+        product.name,
+      );
     } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Unable to update item",
+      showErrorToast(
+        "Unable to update item",
+        error instanceof Error ? error.message : undefined,
       );
     }
   }
@@ -100,10 +108,11 @@ export function ProductManager() {
       setProducts((current) =>
         current.filter((item) => item.id !== product.id),
       );
-      setMessage("Item deleted");
+      showSuccessToast("Item deleted", product.name);
     } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Unable to delete item",
+      showErrorToast(
+        "Unable to delete item",
+        error instanceof Error ? error.message : undefined,
       );
     }
   }
@@ -119,7 +128,10 @@ export function ProductManager() {
         : current.map((item) => (item.id === saved.id ? saved : item)),
     );
     setEditing(null);
-    setMessage(editing === "new" ? "Item added to your store" : "Item updated");
+    showSuccessToast(
+      editing === "new" ? "Item added to your store" : "Item updated",
+      saved.name,
+    );
   }
 
   if (!selectedStore && !loading)
