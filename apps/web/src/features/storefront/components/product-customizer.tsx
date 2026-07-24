@@ -76,7 +76,7 @@ export function ProductCustomizer({
       <div className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-[2rem] border border-[#D4AF37]/35 bg-[#FFFDF8] p-5 text-[#1B1B1B] shadow-2xl sm:rounded-[2rem] sm:p-6">
         <header className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#2E7D32]">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--store-primary)]">
               {copy.customizeDish}
             </p>
             <h2 id="customizer-title" className="mt-1 text-2xl font-bold">
@@ -114,7 +114,7 @@ export function ProductCustomizer({
                         key={option.id}
                         className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition ${
                           checked
-                            ? "border-[#2E7D32] bg-[#2E7D32]/8"
+                            ? "border-[var(--store-primary)] bg-[var(--store-accent)]"
                             : "border-[#7A6A52]/20 hover:border-[#D4AF37]"
                         }`}
                       >
@@ -136,13 +136,13 @@ export function ProductCustomizer({
                               return { ...current, [group.id]: next };
                             });
                           }}
-                          className="size-4 accent-[#155D32]"
+                          className="size-4 accent-[var(--store-primary)]"
                         />
                         <span className="flex-1 text-sm font-semibold">
                           {option.name}
                         </span>
                         {Number(option.priceDelta) ? (
-                          <span className="text-sm font-bold text-[#155D32]">
+                          <span className="text-sm font-bold text-[var(--store-primary)]">
                             +
                             {formatStorePrice(
                               option.priceDelta,
@@ -173,7 +173,7 @@ export function ProductCustomizer({
         <button
           type="button"
           onClick={submit}
-          className="mt-6 flex h-13 w-full items-center justify-center gap-2 rounded-xl border border-[#D4AF37]/70 bg-[#155D32] px-5 font-bold text-white shadow-lg transition hover:bg-[#2E7D32] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
+          className="mt-6 flex h-13 w-full items-center justify-center gap-2 rounded-xl border border-[#D4AF37]/70 bg-[var(--store-primary)] px-5 font-bold text-[var(--store-on-primary)] shadow-lg transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
         >
           <PlusIcon className="size-5" />
           {copy.addToOrder} · {formatStorePrice(total, currency, exchangeRate)}

@@ -112,12 +112,12 @@ export function OrderCart({
             ? `View order with ${itemCount} items, total ${formattedTotal}`
             : copy.startOrder
         }
-        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 right-4 z-50 flex min-h-16 items-center gap-3 rounded-2xl border-2 border-[#D4AF37] bg-[#155D32] px-4 py-2.5 text-left text-white shadow-[0_16px_40px_rgba(9,47,27,0.38)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#1b6b3b] hover:shadow-[0_20px_48px_rgba(9,47,27,0.44)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] motion-reduce:transition-none sm:bottom-8 sm:left-auto sm:right-8 sm:min-w-64 sm:rounded-full"
+        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 right-4 z-50 flex min-h-16 items-center gap-3 rounded-2xl border-2 border-[#D4AF37] bg-[var(--store-primary)] px-4 py-2.5 text-left text-[var(--store-on-primary)] shadow-[0_16px_40px_rgba(9,47,27,0.38)] transition duration-300 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_20px_48px_rgba(9,47,27,0.44)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] motion-reduce:transition-none sm:bottom-8 sm:left-auto sm:right-8 sm:min-w-64 sm:rounded-full"
       >
         <span className="relative grid size-10 shrink-0 place-items-center rounded-full bg-white/12">
           <ShoppingBasketIcon className="size-5" />
           {itemCount ? (
-            <span className="absolute -right-1.5 -top-1.5 grid size-5 place-items-center rounded-full bg-[#D4AF37] text-[0.65rem] font-extrabold text-[#1B1B1B] ring-2 ring-[#155D32]">
+            <span className="absolute -right-1.5 -top-1.5 grid size-5 place-items-center rounded-full bg-[#D4AF37] text-[0.65rem] font-extrabold text-[#1B1B1B] ring-2 ring-[var(--store-primary)]">
               {itemCount > 99 ? "99+" : itemCount}
             </span>
           ) : null}

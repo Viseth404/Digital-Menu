@@ -13,11 +13,17 @@ export function createStorefrontStyle(
   primaryColor: string,
   accentColor: string,
 ): StorefrontStyle {
+  const safePrimary = normalizeThemeColor(primaryColor, "#155D32");
+  const safeAccent = normalizeThemeColor(accentColor, "#F8F3E8");
   return {
-    "--store-primary": primaryColor,
-    "--store-accent": accentColor,
-    "--store-on-primary": getContrastColor(primaryColor),
+    "--store-primary": safePrimary,
+    "--store-accent": safeAccent,
+    "--store-on-primary": getContrastColor(safePrimary),
   };
+}
+
+function normalizeThemeColor(value: string, fallback: string) {
+  return /^#[0-9A-F]{6}$/i.test(value) ? value.toUpperCase() : fallback;
 }
 
 export function filterStorefrontCategories(

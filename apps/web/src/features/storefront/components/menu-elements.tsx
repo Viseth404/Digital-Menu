@@ -35,8 +35,8 @@ export function StoreHero({
 }) {
   return (
     <header className="relative bg-[var(--menu-bg)] pt-3 sm:pt-5 lg:pt-6">
-      <div className="group/hero relative mx-3 min-h-[17rem] overflow-hidden rounded-[1.75rem] border border-[#D4AF37]/25 bg-[#155D32] shadow-[0_18px_55px_rgba(17,49,31,0.2)] transition duration-500 hover:border-[#D4AF37]/45 hover:shadow-[0_24px_65px_rgba(17,49,31,0.27)] sm:mx-5 sm:min-h-[22rem] sm:rounded-[2.25rem] lg:mx-6 lg:min-h-[25rem]">
-        <div className="absolute inset-0 bg-[#155D32]">
+      <div className="group/hero relative mx-3 min-h-[17rem] overflow-hidden rounded-[1.75rem] border border-[#D4AF37]/25 bg-[var(--store-primary)] shadow-[0_18px_55px_rgba(17,49,31,0.2)] transition duration-500 hover:border-[#D4AF37]/45 hover:shadow-[0_24px_65px_rgba(17,49,31,0.27)] sm:mx-5 sm:min-h-[22rem] sm:rounded-[2.25rem] lg:mx-6 lg:min-h-[25rem]">
+        <div className="absolute inset-0 bg-[var(--store-primary)]">
           {store.coverImageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -45,7 +45,7 @@ export function StoreHero({
               className="size-full object-cover transition duration-[1600ms] ease-out motion-safe:group-hover/hero:scale-[1.035]"
             />
           ) : (
-            <div className="size-full bg-[radial-gradient(circle_at_70%_20%,rgba(212,175,55,0.24),transparent_34%),linear-gradient(145deg,#2E7D32,#0d4225)]" />
+            <div className="size-full bg-[var(--store-primary)] opacity-95" />
           )}
           <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(10,35,22,0.88),transparent_62%),linear-gradient(to_right,rgba(9,31,19,0.44),transparent_35%,rgba(9,31,19,0.25))]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,rgba(212,175,55,0.22),transparent_42%)]" />
@@ -152,7 +152,7 @@ export function StoreHero({
                       className="size-full object-cover object-center transition duration-700 ease-out group-hover/logo:scale-105"
                     />
                   ) : (
-                    <span className="grid size-full place-items-center text-4xl font-bold text-[#155D32]">
+                    <span className="grid size-full place-items-center text-4xl font-bold text-[var(--store-primary)]">
                       {store.name.charAt(0)}
                     </span>
                   )}
@@ -181,7 +181,7 @@ export function StoreSearch({
   return (
     <div className="flex gap-2.5">
       <label className="group/search flex h-12 min-w-0 flex-1 items-center gap-3 rounded-2xl border border-[#7A6A52]/20 bg-[var(--menu-card)] px-4 shadow-[0_8px_28px_rgba(92,69,31,0.07)] transition duration-300 hover:border-[#D4AF37]/45 hover:shadow-[0_12px_32px_rgba(92,69,31,0.1)] focus-within:border-[#D4AF37]/70 focus-within:ring-2 focus-within:ring-[#D4AF37]/15">
-        <SearchIcon className="size-[1.1rem] shrink-0 text-[#2E7D32] transition-transform duration-300 group-focus-within/search:scale-110" />
+        <SearchIcon className="size-[1.1rem] shrink-0 text-[var(--store-primary)] transition-transform duration-300 group-focus-within/search:scale-110" />
         <span className="sr-only">{copy.search}</span>
         <input
           value={value}
@@ -248,7 +248,7 @@ function CategoryButton({
       onClick={onClick}
       className={`group/chip relative shrink-0 overflow-hidden rounded-full border px-4 py-2.5 text-sm font-semibold transition duration-300 motion-safe:hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${
         active
-          ? "border-[#155D32] bg-[#155D32] text-white shadow-[0_7px_18px_rgba(21,93,50,0.22)] hover:shadow-[0_10px_24px_rgba(21,93,50,0.3)]"
+          ? "border-[var(--store-primary)] bg-[var(--store-primary)] text-[var(--store-on-primary)] shadow-[0_7px_18px_rgba(21,93,50,0.22)] hover:brightness-110 hover:shadow-[0_10px_24px_rgba(21,93,50,0.3)]"
           : "border-[#7A6A52]/20 bg-[var(--menu-card)] text-[var(--menu-text)] hover:border-[#D4AF37]/70 hover:shadow-md"
       }`}
     >
@@ -269,7 +269,7 @@ export function MenuSectionHeader({
     <div className="mb-9">
       <div className="flex items-end justify-between gap-5">
         <div>
-          <p className="text-[0.68rem] font-bold uppercase tracking-[0.25em] text-[#2E7D32]">
+          <p className="text-[0.68rem] font-bold uppercase tracking-[0.25em] text-[var(--store-primary)]">
             {copy.menuEyebrow}
           </p>
           <h2 className="mt-2 text-3xl font-bold tracking-[-0.025em] text-[var(--menu-text)] sm:text-4xl">
@@ -345,7 +345,7 @@ export function ProductCard({
           </p>
         ) : null}
         <div className="mt-auto flex items-end justify-between gap-2 pt-3">
-          <p className="text-base font-extrabold text-[#155D32] sm:text-lg">
+          <p className="text-base font-extrabold text-[var(--store-primary)] sm:text-lg">
             {formatStorePrice(product.price, currency, exchangeRate)}
           </p>
           {onAdd ? (
@@ -353,7 +353,7 @@ export function ProductCard({
               type="button"
               onClick={onAdd}
               aria-label={`${copy.addToOrder}: ${product.name}`}
-              className="group/add grid size-9 shrink-0 place-items-center rounded-full bg-[#155D32] text-white shadow-sm transition duration-300 hover:scale-110 hover:bg-[#2E7D32] hover:shadow-[0_8px_20px_rgba(21,93,50,0.28)] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
+              className="group/add grid size-9 shrink-0 place-items-center rounded-full bg-[var(--store-primary)] text-[var(--store-on-primary)] shadow-sm transition duration-300 hover:scale-110 hover:brightness-110 hover:shadow-[0_8px_20px_rgba(21,93,50,0.28)] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
             >
               <PlusIcon className="size-4 transition-transform duration-300 group-hover/add:rotate-90" />
             </button>
@@ -374,9 +374,9 @@ export function EmptyMenu({
   const copy = STOREFRONT_COPY[language];
   return (
     <div className="group/empty khmer-corner relative overflow-hidden rounded-3xl border border-dashed border-[#7A6A52]/25 bg-[var(--menu-card)] p-12 text-center shadow-[0_14px_40px_rgba(75,55,24,0.05)] transition duration-500 hover:border-[#D4AF37]/45 hover:shadow-[0_20px_50px_rgba(75,55,24,0.09)]">
-      <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-[#2E7D32]/10 transition duration-500 group-hover/empty:-translate-y-1 group-hover/empty:rotate-3 group-hover/empty:bg-[#D4AF37]/15">
+      <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-[var(--store-accent)] transition duration-500 group-hover/empty:-translate-y-1 group-hover/empty:rotate-3">
         {search ? (
-          <SearchIcon className="size-7 text-[#2E7D32] transition-transform duration-500 group-hover/empty:scale-110" />
+          <SearchIcon className="size-7 text-[var(--store-primary)] transition-transform duration-500 group-hover/empty:scale-110" />
         ) : (
           <KhmerOrnament
             size={40}
@@ -407,7 +407,7 @@ export function StoreFooter({
       <p className="font-semibold text-[var(--menu-text)]">{storeName}</p>
       <p className="mt-3 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[var(--menu-muted)]">
         {copy.footerAttribution}{" "}
-        <span className="text-[#155D32]">{appConfig.name}</span>
+        <span className="text-[var(--store-primary)]">{appConfig.name}</span>
       </p>
     </footer>
   );

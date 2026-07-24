@@ -116,7 +116,7 @@ export function PromotionPopup({
         </button>
 
         {promotion.imageUrl ? (
-          <div className="relative aspect-[16/9] overflow-hidden bg-[#155D32]">
+          <div className="relative aspect-[16/9] overflow-hidden bg-[var(--store-primary)]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={promotion.imageUrl}
@@ -126,7 +126,7 @@ export function PromotionPopup({
             <div className="absolute inset-0 bg-gradient-to-t from-[#102c1d]/65 to-transparent" />
           </div>
         ) : (
-          <div className="relative grid h-36 place-items-center overflow-hidden bg-[#155D32]">
+          <div className="relative grid h-36 place-items-center overflow-hidden bg-[var(--store-primary)]">
             <KhmerOrnament
               size={112}
               className="size-28 rotate-12 object-contain opacity-30"
@@ -140,7 +140,7 @@ export function PromotionPopup({
             size={144}
             className="pointer-events-none absolute -bottom-14 -right-12 size-36 rotate-12 object-contain opacity-[0.06]"
           />
-          <p className="text-[0.65rem] font-bold uppercase tracking-[0.24em] text-[#2E7D32]">
+          <p className="text-[0.65rem] font-bold uppercase tracking-[0.24em] text-[var(--store-primary)]">
             {copy.specialOffer} {storeName}
           </p>
           <h2
@@ -158,7 +158,7 @@ export function PromotionPopup({
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="relative mt-6 inline-flex h-11 items-center justify-center rounded-full bg-[#155D32] px-6 text-sm font-bold text-white shadow-[0_8px_22px_rgba(21,93,50,0.25)] transition hover:-translate-y-0.5 hover:bg-[#2E7D32] hover:shadow-[0_12px_28px_rgba(21,93,50,0.32)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
+            className="relative mt-6 inline-flex h-11 items-center justify-center rounded-full bg-[var(--store-primary)] px-6 text-sm font-bold text-[var(--store-on-primary)] shadow-[0_8px_22px_rgba(21,93,50,0.25)] transition hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_12px_28px_rgba(21,93,50,0.32)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
           >
             {copy.exploreMenu}
           </button>
