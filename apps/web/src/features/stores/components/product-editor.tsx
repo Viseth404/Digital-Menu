@@ -1,7 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { PlusIcon, Trash2Icon, XIcon } from "lucide-react";
+import {
+  Layers3Icon,
+  PlusIcon,
+  SlidersHorizontalIcon,
+  Trash2Icon,
+  XIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Category, Product, ProductInput, ProductOptionGroup } from "../types";
@@ -68,7 +74,7 @@ export function ProductEditor({
     >
       <form
         onSubmit={submit}
-        className="h-full w-full max-w-lg overflow-y-auto bg-background p-6 shadow-2xl"
+        className="h-full w-full max-w-2xl overflow-y-auto bg-background p-5 shadow-2xl sm:p-7"
       >
         <header className="flex items-start justify-between">
           <div>
@@ -148,7 +154,11 @@ export function ProductEditor({
               className="rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </Field>
-          <OptionGroupEditor groups={optionGroups} onChange={setOptionGroups} />
+          <OptionGroupEditor
+            groups={optionGroups}
+            currency={currency}
+            onChange={setOptionGroups}
+          />
           <ImageUploadField
             label="Product image"
             name="imageUrl"
@@ -197,9 +207,11 @@ export function ProductEditor({
 
 function OptionGroupEditor({
   groups,
+  currency,
   onChange,
 }: {
   groups: ProductOptionGroup[];
+  currency: string;
   onChange: (groups: ProductOptionGroup[]) => void;
 }) {
   function updateGroup(
@@ -213,214 +225,344 @@ function OptionGroupEditor({
     );
   }
 
+  function addGroup() {
+    onChange([
+      ...groups,
+      {
+        name: "",
+        nameKh: null,
+        required: false,
+        minSelections: 0,
+        maxSelections: 1,
+        sortOrder: groups.length,
+        options: [
+          {
+            name: "",
+            nameKh: null,
+            priceDelta: 0,
+            isAvailable: true,
+            sortOrder: 0,
+          },
+        ],
+      },
+    ]);
+  }
+
   return (
-    <section className="rounded-2xl border p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-semibold">Choices and modifiers</h3>
-          <p className="text-xs text-muted-foreground">
-            Add sizes, temperatures, toppings, or extras.
-          </p>
+    <section className="overflow-hidden rounded-2xl border bg-muted/20">
+      <div className="flex flex-col gap-4 border-b bg-background p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-foreground text-background">
+            <SlidersHorizontalIcon className="size-4" />
+          </span>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-semibold">Choices and modifiers</h3>
+              {groups.length ? (
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                  {groups.length} {groups.length === 1 ? "group" : "groups"}
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
+              Add sizes, temperatures, toppings, or paid extras.
+            </p>
+          </div>
         </div>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={() =>
-            onChange([
-              ...groups,
-              {
-                name: "",
-                nameKh: null,
-                required: false,
-                minSelections: 0,
-                maxSelections: 1,
-                sortOrder: groups.length,
-                options: [
-                  {
-                    name: "",
-                    nameKh: null,
-                    priceDelta: 0,
-                    isAvailable: true,
-                    sortOrder: 0,
-                  },
-                ],
-              },
-            ])
-          }
-        >
-          <PlusIcon /> Group
+        <Button type="button" size="sm" onClick={addGroup}>
+          <PlusIcon /> Add group
         </Button>
       </div>
 
-      <div className="mt-4 space-y-4">
-        {groups.map((group, groupIndex) => (
-          <div
-            key={group.id ?? groupIndex}
-            className="rounded-xl bg-muted/50 p-3"
+      <div className="space-y-4 p-3 sm:p-4">
+        {!groups.length ? (
+          <button
+            type="button"
+            onClick={addGroup}
+            className="group grid w-full place-items-center rounded-xl border border-dashed bg-background px-5 py-9 text-center transition hover:border-foreground/30 hover:bg-muted/30 focus-visible:outline-2 focus-visible:outline-offset-2"
           >
-            <div className="grid gap-2 sm:grid-cols-2">
-              <Input
-                value={group.name}
-                placeholder="Group name, e.g. Size"
-                aria-label={`Option group ${groupIndex + 1} name`}
-                onChange={(event) =>
-                  updateGroup(groupIndex, (current) => ({
-                    ...current,
-                    name: event.target.value,
-                  }))
-                }
-              />
-              <Input
-                value={group.nameKh ?? ""}
-                lang="km"
-                placeholder="ឈ្មោះក្រុមជាភាសាខ្មែរ"
-                aria-label={`Option group ${groupIndex + 1} Khmer name`}
-                onChange={(event) =>
-                  updateGroup(groupIndex, (current) => ({
-                    ...current,
-                    nameKh: event.target.value || null,
-                  }))
-                }
-              />
-            </div>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={group.required}
-                  onChange={(event) =>
-                    updateGroup(groupIndex, (current) => ({
-                      ...current,
-                      required: event.target.checked,
-                      minSelections: event.target.checked ? 1 : 0,
-                    }))
-                  }
-                />
-                Required
-              </label>
-              <label className="flex items-center gap-2">
-                Maximum choices
-                <Input
-                  type="number"
-                  min="1"
-                  max={Math.max(1, group.options.length)}
-                  value={group.maxSelections}
-                  className="h-8 w-16"
-                  onChange={(event) =>
-                    updateGroup(groupIndex, (current) => ({
-                      ...current,
-                      maxSelections: Math.max(1, Number(event.target.value)),
-                    }))
-                  }
-                />
-              </label>
-              <Button
-                type="button"
-                size="icon-sm"
-                variant="ghost"
-                className="ml-auto text-destructive"
-                aria-label={`Delete ${group.name || "option group"}`}
-                onClick={() =>
-                  onChange(groups.filter((_, index) => index !== groupIndex))
-                }
-              >
-                <Trash2Icon />
-              </Button>
-            </div>
+            <span className="grid size-11 place-items-center rounded-full bg-muted transition group-hover:scale-105">
+              <Layers3Icon className="size-5 text-muted-foreground" />
+            </span>
+            <span className="mt-3 text-sm font-semibold">
+              Add your first modifier group
+            </span>
+            <span className="mt-1 max-w-sm text-xs leading-5 text-muted-foreground">
+              For example: Size, Sugar level, Temperature, or Extra toppings.
+            </span>
+          </button>
+        ) : null}
 
-            <div className="mt-3 space-y-2">
-              {group.options.map((option, optionIndex) => (
-                <div
-                  key={option.id ?? optionIndex}
-                  className="grid grid-cols-[1fr_5rem_auto] gap-2"
+        {groups.map((group, groupIndex) => {
+          const choiceCount = group.options.length;
+          return (
+            <article
+              key={group.id ?? groupIndex}
+              className="overflow-hidden rounded-xl border bg-background shadow-sm"
+            >
+              <header className="flex items-center justify-between gap-3 border-b bg-muted/35 px-4 py-3">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-foreground text-xs font-bold text-background">
+                    {groupIndex + 1}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">
+                      {group.name || "New modifier group"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {choiceCount} {choiceCount === 1 ? "choice" : "choices"} ·{" "}
+                      {group.required ? "Required" : "Optional"}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="ghost"
+                  className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  aria-label={`Delete ${group.name || "option group"}`}
+                  onClick={() =>
+                    onChange(groups.filter((_, index) => index !== groupIndex))
+                  }
                 >
-                  <Input
-                    value={option.name}
-                    placeholder="Choice name"
-                    aria-label={`Choice ${optionIndex + 1} name`}
-                    onChange={(event) =>
-                      updateGroup(groupIndex, (current) => ({
-                        ...current,
-                        options: current.options.map((item, index) =>
-                          index === optionIndex
-                            ? { ...item, name: event.target.value }
-                            : item,
-                        ),
-                      }))
-                    }
-                  />
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={option.priceDelta}
-                    aria-label={`Choice ${optionIndex + 1} additional price`}
-                    onChange={(event) =>
-                      updateGroup(groupIndex, (current) => ({
-                        ...current,
-                        options: current.options.map((item, index) =>
-                          index === optionIndex
-                            ? {
-                                ...item,
-                                priceDelta: Math.max(
-                                  0,
-                                  Number(event.target.value),
-                                ),
+                  <Trash2Icon />
+                </Button>
+              </header>
+
+              <div className="space-y-5 p-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="Group name">
+                    <Input
+                      value={group.name}
+                      placeholder="e.g. Size"
+                      aria-label={`Option group ${groupIndex + 1} name`}
+                      onChange={(event) =>
+                        updateGroup(groupIndex, (current) => ({
+                          ...current,
+                          name: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                  <Field label="Khmer name (optional)">
+                    <Input
+                      value={group.nameKh ?? ""}
+                      lang="km"
+                      placeholder="ឧ. ទំហំ"
+                      aria-label={`Option group ${groupIndex + 1} Khmer name`}
+                      onChange={(event) =>
+                        updateGroup(groupIndex, (current) => ({
+                          ...current,
+                          nameKh: event.target.value || null,
+                        }))
+                      }
+                    />
+                  </Field>
+                </div>
+
+                <div className="grid gap-3 rounded-xl border bg-muted/25 p-3 sm:grid-cols-[1fr_auto] sm:items-center">
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={group.required}
+                      className="mt-0.5 size-4 accent-foreground"
+                      onChange={(event) =>
+                        updateGroup(groupIndex, (current) => ({
+                          ...current,
+                          required: event.target.checked,
+                          minSelections: event.target.checked ? 1 : 0,
+                        }))
+                      }
+                    />
+                    <span>
+                      <span className="block text-sm font-medium">
+                        Customer must choose
+                      </span>
+                      <span className="block text-xs text-muted-foreground">
+                        Require at least one selection before ordering.
+                      </span>
+                    </span>
+                  </label>
+                  <label className="flex items-center justify-between gap-3 text-xs font-medium sm:justify-start">
+                    Maximum choices
+                    <Input
+                      type="number"
+                      min="1"
+                      max={Math.max(1, group.options.length)}
+                      value={group.maxSelections}
+                      className="h-9 w-20 bg-background text-center"
+                      onChange={(event) =>
+                        updateGroup(groupIndex, (current) => ({
+                          ...current,
+                          maxSelections: Math.min(
+                            current.options.length,
+                            Math.max(1, Number(event.target.value)),
+                          ),
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
+
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-semibold">Choices</h4>
+                      <p className="text-[11px] text-muted-foreground">
+                        Enter the extra charge in {currency}.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-2.5">
+                    {group.options.map((option, optionIndex) => (
+                      <div
+                        key={option.id ?? optionIndex}
+                        className="rounded-xl border bg-muted/15 p-3"
+                      >
+                        <div className="mb-2 flex items-center justify-between">
+                          <span className="text-xs font-semibold text-muted-foreground">
+                            Choice {optionIndex + 1}
+                          </span>
+                          <label className="flex items-center gap-2 text-[11px] font-medium text-muted-foreground">
+                            <input
+                              type="checkbox"
+                              checked={option.isAvailable}
+                              className="size-3.5 accent-foreground"
+                              onChange={(event) =>
+                                updateGroup(groupIndex, (current) => ({
+                                  ...current,
+                                  options: current.options.map((item, index) =>
+                                    index === optionIndex
+                                      ? {
+                                          ...item,
+                                          isAvailable: event.target.checked,
+                                        }
+                                      : item,
+                                  ),
+                                }))
                               }
-                            : item,
-                        ),
-                      }))
-                    }
-                  />
+                            />
+                            Available
+                          </label>
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_7rem_auto]">
+                          <Input
+                            value={option.name}
+                            placeholder="Choice name"
+                            aria-label={`Choice ${optionIndex + 1} name`}
+                            onChange={(event) =>
+                              updateGroup(groupIndex, (current) => ({
+                                ...current,
+                                options: current.options.map((item, index) =>
+                                  index === optionIndex
+                                    ? { ...item, name: event.target.value }
+                                    : item,
+                                ),
+                              }))
+                            }
+                          />
+                          <Input
+                            value={option.nameKh ?? ""}
+                            lang="km"
+                            placeholder="ឈ្មោះជាភាសាខ្មែរ"
+                            aria-label={`Choice ${optionIndex + 1} Khmer name`}
+                            onChange={(event) =>
+                              updateGroup(groupIndex, (current) => ({
+                                ...current,
+                                options: current.options.map((item, index) =>
+                                  index === optionIndex
+                                    ? {
+                                        ...item,
+                                        nameKh: event.target.value || null,
+                                      }
+                                    : item,
+                                ),
+                              }))
+                            }
+                          />
+                          <div className="relative">
+                            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-xs text-muted-foreground">
+                              +
+                            </span>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={option.priceDelta}
+                              className="pl-7"
+                              aria-label={`Choice ${optionIndex + 1} additional price`}
+                              onChange={(event) =>
+                                updateGroup(groupIndex, (current) => ({
+                                  ...current,
+                                  options: current.options.map((item, index) =>
+                                    index === optionIndex
+                                      ? {
+                                          ...item,
+                                          priceDelta: Math.max(
+                                            0,
+                                            Number(event.target.value),
+                                          ),
+                                        }
+                                      : item,
+                                  ),
+                                }))
+                              }
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            size="icon-sm"
+                            variant="ghost"
+                            className="justify-self-end text-muted-foreground hover:text-destructive"
+                            aria-label={`Delete choice ${option.name}`}
+                            disabled={group.options.length === 1}
+                            onClick={() =>
+                              updateGroup(groupIndex, (current) => ({
+                                ...current,
+                                options: current.options.filter(
+                                  (_, index) => index !== optionIndex,
+                                ),
+                                maxSelections: Math.min(
+                                  current.maxSelections,
+                                  current.options.length - 1,
+                                ),
+                              }))
+                            }
+                          >
+                            <Trash2Icon />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                   <Button
                     type="button"
-                    size="icon-sm"
-                    variant="ghost"
-                    aria-label={`Delete choice ${option.name}`}
-                    disabled={group.options.length === 1}
+                    size="sm"
+                    variant="outline"
+                    className="mt-3 w-full border-dashed"
                     onClick={() =>
                       updateGroup(groupIndex, (current) => ({
                         ...current,
-                        options: current.options.filter(
-                          (_, index) => index !== optionIndex,
-                        ),
-                        maxSelections: Math.min(
-                          current.maxSelections,
-                          current.options.length - 1,
-                        ),
+                        options: [
+                          ...current.options,
+                          {
+                            name: "",
+                            nameKh: null,
+                            priceDelta: 0,
+                            isAvailable: true,
+                            sortOrder: current.options.length,
+                          },
+                        ],
                       }))
                     }
                   >
-                    <Trash2Icon />
+                    <PlusIcon /> Add another choice
                   </Button>
                 </div>
-              ))}
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() =>
-                  updateGroup(groupIndex, (current) => ({
-                    ...current,
-                    options: [
-                      ...current.options,
-                      {
-                        name: "",
-                        nameKh: null,
-                        priceDelta: 0,
-                        isAvailable: true,
-                        sortOrder: current.options.length,
-                      },
-                    ],
-                  }))
-                }
-              >
-                <PlusIcon /> Add choice
-              </Button>
-            </div>
-          </div>
-        ))}
+              </div>
+            </article>
+          );
+        })}
       </div>
     </section>
   );
