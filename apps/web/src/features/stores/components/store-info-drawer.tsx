@@ -3,12 +3,11 @@
 import type React from "react";
 import {
   ExternalLinkIcon,
-  InfoIcon,
   MailIcon,
   MapPinIcon,
   PhoneIcon,
-  StoreIcon,
 } from "lucide-react";
+import { KhmerOrnament } from "@/features/storefront/components/khmer-ornament";
 import {
   Sheet,
   SheetContent,
@@ -39,19 +38,29 @@ export function StoreInfoDrawer({
 }: StoreInfoDrawerProps) {
   return (
     <Sheet>
-      <SheetTrigger className="inline-flex h-11 items-center gap-2 rounded-xl border border-black/10 bg-white px-3 text-sm font-semibold text-zinc-700 shadow-sm transition hover:border-[var(--store-primary)] sm:px-4">
-        <InfoIcon className="size-4 text-[var(--store-primary)]" />
+      <SheetTrigger className="group/info inline-flex h-12 items-center gap-2 rounded-2xl border border-[#7A6A52]/20 bg-[var(--menu-card)] px-3 text-sm font-semibold text-[var(--menu-text)] shadow-[0_8px_28px_rgba(92,69,31,0.07)] transition duration-300 hover:-translate-y-0.5 hover:border-[#D4AF37]/70 hover:shadow-[0_12px_30px_rgba(92,69,31,0.11)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] sm:px-4">
+        <KhmerOrnament
+          size={24}
+          className="size-5 object-contain drop-shadow-sm transition duration-500 group-hover/info:rotate-12 group-hover/info:scale-110"
+        />
         <span className="hidden sm:inline">Store info</span>
       </SheetTrigger>
       <SheetContent className="w-[90vw] gap-0 bg-white sm:max-w-md">
-        <SheetHeader className="border-b bg-[var(--store-accent)] p-6 pr-12">
-          <div className="mb-4 flex size-11 items-center justify-center rounded-xl bg-[var(--store-primary)] text-[var(--store-on-primary)]">
-            <StoreIcon className="size-5" />
+        <SheetHeader className="relative overflow-hidden border-b bg-[#F8F3E8] p-6 pr-12">
+          <KhmerOrnament
+            size={180}
+            className="pointer-events-none absolute -bottom-14 -right-10 size-40 rotate-12 object-contain opacity-[0.08]"
+          />
+          <div className="group/mark relative mb-4 flex size-12 items-center justify-center rounded-2xl border border-[#D4AF37]/30 bg-[#FFFDF8] p-1.5 shadow-sm">
+            <KhmerOrnament
+              size={42}
+              className="size-full object-contain drop-shadow-sm transition duration-500 group-hover/mark:rotate-6 group-hover/mark:scale-110"
+            />
           </div>
-          <SheetTitle className="text-2xl font-bold">
+          <SheetTitle className="relative text-2xl font-bold text-[#1B1B1B]">
             {name}
           </SheetTitle>
-          <SheetDescription>
+          <SheetDescription className="relative text-[#7A6A52]">
             {description ?? "Everything you need to know about this store."}
           </SheetDescription>
         </SheetHeader>

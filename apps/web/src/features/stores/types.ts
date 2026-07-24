@@ -10,6 +10,10 @@ export type Store = {
   email: string | null;
   logoUrl: string | null;
   coverImageUrl: string | null;
+  promotionEnabled: boolean;
+  promotionTitle: string | null;
+  promotionMessage: string | null;
+  promotionImageUrl: string | null;
   primaryColor: string;
   accentColor: string;
   facebookUrl: string | null;
@@ -36,6 +40,10 @@ export type UpdateStoreInput = Partial<
     | "address"
     | "logoUrl"
     | "coverImageUrl"
+    | "promotionEnabled"
+    | "promotionTitle"
+    | "promotionMessage"
+    | "promotionImageUrl"
     | "primaryColor"
     | "accentColor"
     | "facebookUrl"

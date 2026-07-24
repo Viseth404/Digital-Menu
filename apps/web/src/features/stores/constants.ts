@@ -17,3 +17,10 @@ export const STORE_THEME = {
 } as const;
 
 export const IMAGE_ACCEPT = "image/jpeg,image/png,image/webp,image/gif";
+
+export const PROMOTION_RULES = {
+  titleMaxLength: 80,
+  messageMaxLength: 240,
+  displayDelayMs: 700,
+  sessionStoragePrefix: "teamone-menu-promotion",
+} as const;

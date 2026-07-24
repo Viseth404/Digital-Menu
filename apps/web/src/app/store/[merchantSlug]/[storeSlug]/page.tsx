@@ -57,6 +57,16 @@ export default async function StorefrontPage({
         email: store.email ?? store.merchant.contactEmail,
         logoUrl: store.logoUrl,
         coverImageUrl: store.coverImageUrl,
+        promotion:
+          store.promotionEnabled &&
+          store.promotionTitle &&
+          store.promotionMessage
+            ? {
+                title: store.promotionTitle,
+                message: store.promotionMessage,
+                imageUrl: store.promotionImageUrl,
+              }
+            : null,
         primaryColor: store.primaryColor,
         accentColor: store.accentColor,
         currency: store.currency,

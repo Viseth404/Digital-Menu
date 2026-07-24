@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ApiException, handleApiError } from "@/lib/server/api-response";
 import { prisma } from "@/lib/server/prisma";
 import { requireManagedStore } from "@/features/stores/merchant-access";
-import { STORE_THEME } from "@/features/stores/constants";
+import { PROMOTION_RULES, STORE_THEME } from "@/features/stores/constants";
 import {
   assertOptionalImageUrl,
   assertOptionalUrl,
@@ -42,6 +42,33 @@ export async function PATCH(request: NextRequest, context: StoreRouteContext) {
       }
       return value?.toUpperCase();
     };
+    const promotionEnabled = readBoolean(body, "promotionEnabled");
+    const promotionTitle = readNullableString(body, "promotionTitle");
+    const promotionMessage = readNullableString(body, "promotionMessage");
+    if (promotionEnabled && (!promotionTitle || !promotionMessage)) {
+      throw new ApiException(
+        "Promotion headline and message are required when enabled",
+        400,
+      );
+    }
+    if (
+      promotionTitle &&
+      promotionTitle.length > PROMOTION_RULES.titleMaxLength
+    ) {
+      throw new ApiException(
+        `Promotion headline must be ${PROMOTION_RULES.titleMaxLength} characters or less`,
+        400,
+      );
+    }
+    if (
+      promotionMessage &&
+      promotionMessage.length > PROMOTION_RULES.messageMaxLength
+    ) {
+      throw new ApiException(
+        `Promotion message must be ${PROMOTION_RULES.messageMaxLength} characters or less`,
+        400,
+      );
+    }
 
     const data: Prisma.StoreUpdateInput = {
       name: merchant.name,
@@ -57,6 +84,13 @@ export async function PATCH(request: NextRequest, context: StoreRouteContext) {
       coverImageUrl: assertOptionalImageUrl(
         readNullableString(body, "coverImageUrl"),
         "coverImageUrl",
+      ),
+      promotionEnabled,
+      promotionTitle,
+      promotionMessage,
+      promotionImageUrl: assertOptionalImageUrl(
+        readNullableString(body, "promotionImageUrl"),
+        "promotionImageUrl",
       ),
       primaryColor: readColor("primaryColor"),
       accentColor: readColor("accentColor"),

@@ -1,5 +1,5 @@
 export const appConfig = {
-  name: "Savor Kitchen",
+  name: "TeamOne Digital-Menu",
   description: "Restaurant management system",
   supportEmail: "admin@savor.com",
   copyrightYear: 2026,

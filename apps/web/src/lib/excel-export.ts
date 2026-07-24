@@ -16,7 +16,7 @@ export async function exportExcelWorkbook(
 ) {
   const ExcelJS = await import("exceljs");
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "Savor Kitchen";
+  workbook.creator = "TeamOne Digital-Menu";
   workbook.created = new Date();
 
   for (const source of sheets) {
@@ -28,7 +28,10 @@ export async function exportExcelWorkbook(
     source.rows.forEach((row) => sheet.addRow(row));
     sheet.autoFilter = {
       from: { row: 1, column: 1 },
-      to: { row: Math.max(1, source.rows.length + 1), column: source.headers.length },
+      to: {
+        row: Math.max(1, source.rows.length + 1),
+        column: source.headers.length,
+      },
     };
 
     const header = sheet.getRow(1);

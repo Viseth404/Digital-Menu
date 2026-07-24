@@ -11,12 +11,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(appConfig.routes.login, request.url));
   }
 
-  if (hasSession && isLoginPage) {
-    return NextResponse.redirect(
-      new URL(appConfig.routes.dashboard, request.url),
-    );
-  }
-
+  // Cookie presence does not prove the session is valid. The server validates
+  // it on protected pages; allowing /login through prevents stale cookies from
+  // bouncing indefinitely between /login and the dashboard.
   return NextResponse.next();
 }
 

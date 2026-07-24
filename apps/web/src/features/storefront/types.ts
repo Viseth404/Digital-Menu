@@ -13,6 +13,12 @@ export type StorefrontCategory = {
   products: StorefrontProduct[];
 };
 
+export type StorePromotion = {
+  title: string;
+  message: string;
+  imageUrl: string | null;
+};
+
 export type StorefrontStore = {
   merchantSlug: string;
   storeSlug: string;
@@ -23,6 +29,7 @@ export type StorefrontStore = {
   email: string | null;
   logoUrl: string | null;
   coverImageUrl: string | null;
+  promotion: StorePromotion | null;
   primaryColor: string;
   accentColor: string;
   currency: string;

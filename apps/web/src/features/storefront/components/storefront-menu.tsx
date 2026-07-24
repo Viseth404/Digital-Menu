@@ -1,12 +1,16 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { useMemo, useState } from "react";
-import { MoonIcon, SearchIcon, SunIcon, UtensilsIcon } from "lucide-react";
 import { StoreInfoDrawer } from "@/features/stores/components/store-info-drawer";
 import {
-  CategoryButton,
+  CategoryTabs,
   EmptyMenu,
+  MenuSectionHeader,
   ProductCard,
+  StoreFooter,
+  StoreHero,
+  StoreSearch,
 } from "@/features/storefront/components/menu-elements";
 import type {
   StorefrontCategory,
@@ -22,6 +26,8 @@ import {
   OrderCart,
   type CartEntry,
 } from "@/features/storefront/components/order-cart";
+import { PromotionPopup } from "@/features/storefront/components/promotion-popup";
+import { STOREFRONT_PALETTE } from "@/features/storefront/constants";
 
 type StorefrontMenuProps = {
   store: StorefrontStore;
@@ -39,7 +45,14 @@ export function StorefrontMenu({ store, categoryGroups }: StorefrontMenuProps) {
     [activeCategory, categoryGroups, search],
   );
   const totalProducts = countProducts(categoryGroups);
-  const style = createStorefrontStyle(store.primaryColor, store.accentColor);
+  const palette = darkMode ? STOREFRONT_PALETTE.dark : STOREFRONT_PALETTE.light;
+  const style = {
+    ...createStorefrontStyle(store.primaryColor, store.accentColor),
+    "--menu-bg": palette.background,
+    "--menu-card": palette.card,
+    "--menu-text": palette.text,
+    "--menu-muted": palette.muted,
+  } as CSSProperties;
   const cartEntries = Object.values(cart);
 
   function changeQuantity(productId: string, quantity: number) {
@@ -59,220 +72,112 @@ export function StorefrontMenu({ store, categoryGroups }: StorefrontMenuProps) {
   return (
     <main
       style={style}
-      className={`min-h-screen transition-colors ${
-        darkMode ? "bg-[#11110f] text-zinc-100" : "bg-[#fafaf8] text-zinc-900"
-      }`}
+      className="min-h-screen overflow-x-clip bg-[var(--menu-bg)] text-[var(--menu-text)] transition-colors"
     >
-      <section className="relative overflow-hidden">
-        <div
-          className={`absolute inset-0 ${darkMode ? "bg-zinc-900" : "bg-zinc-200"}`}
-        >
-          {store.coverImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={store.coverImageUrl}
-              alt=""
-              className="size-full object-cover"
-            />
-          ) : null}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/20" />
-        </div>
-
-        <div className="relative mx-auto flex min-h-[19rem] max-w-6xl flex-col justify-between px-4 py-5 sm:min-h-[24rem] sm:px-6 sm:py-7">
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setDarkMode((value) => !value)}
-              aria-label="Toggle color theme"
-              className="grid size-10 place-items-center rounded-full border border-white/25 bg-black/20 text-white backdrop-blur-md transition hover:bg-black/35"
-            >
-              {darkMode ? (
-                <SunIcon className="size-4" />
-              ) : (
-                <MoonIcon className="size-4" />
-              )}
-            </button>
-          </div>
-
-          <div className="flex items-end gap-4 text-white sm:gap-5">
-            <div className="grid size-20 shrink-0 place-items-center overflow-hidden rounded-2xl border border-white/30 bg-white shadow-xl sm:size-24">
-              {store.logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={store.logoUrl}
-                  alt={`${store.name} logo`}
-                  className="size-full object-cover"
-                />
-              ) : (
-                <span
-                  className="text-3xl font-bold"
-                  style={{ color: store.primaryColor }}
-                >
-                  {store.name.charAt(0)}
-                </span>
-              )}
-            </div>
-            <div className="min-w-0 pb-1">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/65">
-                {store.merchantName}
-              </p>
-              <h1 className="truncate text-3xl font-bold tracking-tight sm:text-5xl">
-                {store.name}
-              </h1>
-              {store.description ? (
-                <p className="mt-2 line-clamp-2 max-w-2xl text-sm leading-6 text-white/75 sm:text-base">
-                  {store.description}
-                </p>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div
-        className={`sticky top-0 z-30 border-b backdrop-blur-xl ${
-          darkMode
-            ? "border-white/10 bg-[#11110f]/90"
-            : "border-black/5 bg-[#fafaf8]/90"
-        }`}
-      >
-        <div className="mx-auto max-w-6xl px-4 py-3 sm:px-6">
-          <div className="flex gap-2">
-            <label
-              className={`flex h-11 min-w-0 flex-1 items-center gap-3 rounded-xl border px-4 ${
-                darkMode
-                  ? "border-white/10 bg-white/5"
-                  : "border-black/10 bg-white shadow-sm"
-              }`}
-            >
-              <SearchIcon className="size-4 shrink-0 text-zinc-400" />
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search dishes..."
-                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-zinc-400"
-              />
-            </label>
-            <StoreInfoDrawer
-              name={store.name}
-              description={store.description}
-              address={store.address}
-              phone={store.phone}
-              email={store.email}
-              currency={store.currency}
-              socialLinks={store.socialLinks}
-            />
-          </div>
-
-          {categoryGroups.length ? (
-            <nav
-              aria-label="Menu categories"
-              className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]"
-            >
-              <CategoryButton
-                active={activeCategory === ALL_CATEGORIES}
-                label="All menu"
-                onClick={() => setActiveCategory(ALL_CATEGORIES)}
-                darkMode={darkMode}
-              />
-              {categoryGroups.map((group) => (
-                <CategoryButton
-                  key={group.id}
-                  active={activeCategory === group.id}
-                  label={group.name}
-                  onClick={() => setActiveCategory(group.id)}
-                  darkMode={darkMode}
-                />
-              ))}
-            </nav>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
-        <div className="mb-8 flex items-end justify-between gap-4">
-          <div>
-            <p
-              className="text-xs font-bold uppercase tracking-[0.18em]"
-              style={{ color: store.primaryColor }}
-            >
-              Our menu
-            </p>
-            <h2 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
-              Pick something delicious
-            </h2>
-          </div>
-          <span className="shrink-0 text-sm text-zinc-500">
-            {totalProducts} {totalProducts === 1 ? "item" : "items"}
-          </span>
-        </div>
-
-        {filteredGroups.length ? (
-          <div className="space-y-12">
-            {filteredGroups.map((group) => (
-              <section key={group.id} id={`category-${group.id}`}>
-                <div className="mb-5 flex items-center gap-3">
-                  <h3 className="text-xl font-bold">{group.name}</h3>
-                  <span className="rounded-full bg-[var(--store-accent)] px-2.5 py-1 text-xs font-semibold text-[var(--store-primary)]">
-                    {group.products.length}
-                  </span>
-                </div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {group.products.map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      currency={store.currency}
-                      exchangeRate={store.exchangeRate}
-                      darkMode={darkMode}
-                      onAdd={
-                        store.orderingTable
-                          ? () =>
-                              setCart((current) => ({
-                                ...current,
-                                [product.id]: {
-                                  product,
-                                  quantity:
-                                    (current[product.id]?.quantity ?? 0) + 1,
-                                },
-                              }))
-                          : undefined
-                      }
-                    />
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-        ) : (
-          <EmptyMenu search={search} darkMode={darkMode} />
-        )}
-      </div>
-
-      {store.orderingTable ? (
-        <OrderCart
+      <div className="mx-auto max-w-[1440px] bg-[var(--menu-bg)] lg:my-6 lg:overflow-hidden lg:rounded-[2rem] lg:shadow-[0_24px_80px_rgba(77,55,23,0.12)]">
+        <StoreHero
           store={store}
-          entries={cartEntries}
-          onQuantityChange={changeQuantity}
-          onOrderPlaced={() => setCart({})}
+          darkMode={darkMode}
+          onToggleTheme={() => setDarkMode((value) => !value)}
         />
-      ) : null}
 
-      <footer
-        className={`mt-8 border-t px-5 py-8 text-center text-sm ${
-          darkMode
-            ? "border-white/10 text-zinc-500"
-            : "border-black/5 text-zinc-500"
-        }`}
-      >
-        <p className="flex items-center justify-center gap-2">
-          <UtensilsIcon
-            className="size-4"
-            style={{ color: store.primaryColor }}
+        <div className="sticky top-0 z-30 border-b border-[#7A6A52]/15 bg-[var(--menu-bg)]/95 pt-14 shadow-[0_8px_28px_rgba(75,55,24,0.04)] backdrop-blur-xl sm:pt-16">
+          <div className="mx-auto max-w-[1180px] px-4 pb-3 sm:px-8">
+            <StoreSearch
+              value={search}
+              onChange={setSearch}
+              infoButton={
+                <StoreInfoDrawer
+                  name={store.name}
+                  description={store.description}
+                  address={store.address}
+                  phone={store.phone}
+                  email={store.email}
+                  currency={store.currency}
+                  socialLinks={store.socialLinks}
+                />
+              }
+            />
+            {categoryGroups.length ? (
+              <CategoryTabs
+                groups={categoryGroups}
+                activeCategory={activeCategory}
+                allCategoriesValue={ALL_CATEGORIES}
+                onChange={setActiveCategory}
+              />
+            ) : null}
+          </div>
+        </div>
+
+        <div
+          id="menu"
+          className="mx-auto max-w-[1180px] scroll-mt-40 px-4 py-9 sm:px-8 sm:py-14"
+        >
+          <MenuSectionHeader totalProducts={totalProducts} />
+
+          {filteredGroups.length ? (
+            <div className="space-y-12 sm:space-y-16">
+              {filteredGroups.map((group) => (
+                <section
+                  key={group.id}
+                  id={`category-${group.id}`}
+                  className="scroll-mt-44"
+                >
+                  <div className="mb-5 flex items-center gap-3">
+                    <h3 className="text-xl font-bold tracking-tight text-[var(--menu-text)] sm:text-2xl">
+                      {group.name}
+                    </h3>
+                    <span className="rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-2.5 py-1 text-xs font-bold text-[var(--menu-muted)]">
+                      {group.products.length}
+                    </span>
+                  </div>
+                  <div className="grid gap-3.5 lg:grid-cols-2 lg:gap-4">
+                    {group.products.map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        currency={store.currency}
+                        exchangeRate={store.exchangeRate}
+                        onAdd={
+                          store.orderingTable
+                            ? () =>
+                                setCart((current) => ({
+                                  ...current,
+                                  [product.id]: {
+                                    product,
+                                    quantity:
+                                      (current[product.id]?.quantity ?? 0) + 1,
+                                  },
+                                }))
+                            : undefined
+                        }
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          ) : (
+            <EmptyMenu search={search} />
+          )}
+        </div>
+
+        {store.orderingTable ? (
+          <OrderCart
+            store={store}
+            entries={cartEntries}
+            onQuantityChange={changeQuantity}
+            onOrderPlaced={() => setCart({})}
           />
-          {store.name} · Made with care
-        </p>
-      </footer>
+        ) : null}
+
+        <StoreFooter storeName={store.name} />
+      </div>
+      <PromotionPopup
+        storeKey={`${store.merchantSlug}:${store.storeSlug}`}
+        storeName={store.name}
+        promotion={store.promotion}
+      />
     </main>
   );
 }
