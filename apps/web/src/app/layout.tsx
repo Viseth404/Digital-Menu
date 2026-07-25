@@ -7,6 +7,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: appConfig.name,
   description: appConfig.description,
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 export default function RootLayout({
