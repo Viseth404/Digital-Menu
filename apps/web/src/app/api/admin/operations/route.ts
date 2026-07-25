@@ -31,7 +31,10 @@ export async function GET(request: NextRequest) {
       lockedUsers,
       expiredSubscriptions,
     ] = await Promise.all([
-      prisma.subscriptionPlan.findMany({ orderBy: { monthlyPrice: "asc" } }),
+      prisma.subscriptionPlan.findMany({
+        include: { _count: { select: { subscriptions: true } } },
+        orderBy: [{ isActive: "desc" }, { monthlyPrice: "asc" }],
+      }),
       prisma.merchant.findMany({
         include: {
           subscription: { include: { plan: true } },
@@ -125,6 +128,54 @@ export async function POST(request: NextRequest) {
       targetType = "SUBSCRIPTION_PLAN";
       targetId = (result as { id: string }).id;
       targetName = (result as { name: string }).name;
+    } else if (action === "UPDATE_PLAN") {
+      const planId = readString(body, "planId")!;
+      result = await prisma.subscriptionPlan.update({
+        where: { id: planId },
+        data: {
+          name: readString(body, "name", { min: 2 })!,
+          description: readNullableString(body, "description"),
+          monthlyPrice: readNumber(body, "monthlyPrice")!,
+          yearlyPrice: readNumber(body, "yearlyPrice")!,
+          maxStores: readPositiveInteger(body, "maxStores"),
+          maxProducts: readPositiveInteger(body, "maxProducts"),
+          maxUsers: readPositiveInteger(body, "maxUsers"),
+          storageMb: readPositiveInteger(body, "storageMb"),
+        },
+      });
+      targetType = "SUBSCRIPTION_PLAN";
+      targetId = planId;
+      targetName = (result as { name: string }).name;
+    } else if (action === "SET_PLAN_ACTIVE") {
+      const planId = readString(body, "planId")!;
+      const isActive = readBoolean(body, "isActive");
+      result = await prisma.subscriptionPlan.update({
+        where: { id: planId },
+        data: { isActive },
+      });
+      targetType = "SUBSCRIPTION_PLAN";
+      targetId = planId;
+    } else if (action === "DELETE_PLAN") {
+      const planId = readString(body, "planId")!;
+      const plan = await prisma.subscriptionPlan.findUniqueOrThrow({
+        where: { id: planId },
+        select: {
+          name: true,
+          _count: { select: { subscriptions: true } },
+        },
+      });
+      if (plan._count.subscriptions > 0) {
+        throw new ApiException(
+          "This plan is assigned to merchants. Deactivate it instead to preserve billing history.",
+          409,
+        );
+      }
+      result = await prisma.subscriptionPlan.delete({
+        where: { id: planId },
+      });
+      targetType = "SUBSCRIPTION_PLAN";
+      targetId = planId;
+      targetName = plan.name;
     } else if (action === "ASSIGN_PLAN") {
       const merchantId = readString(body, "merchantId")!;
       const planId = readString(body, "planId")!;
@@ -302,6 +353,14 @@ function readPositiveInteger(body: Record<string, unknown>, key: string) {
   const value = readNumber(body, key);
   if (!value || !Number.isInteger(value) || value < 1) {
     throw new ApiException(`${key} must be a positive integer`, 400);
+  }
+  return value;
+}
+
+function readBoolean(body: Record<string, unknown>, key: string) {
+  const value = body[key];
+  if (typeof value !== "boolean") {
+    throw new ApiException(`${key} must be a boolean`, 400);
   }
   return value;
 }

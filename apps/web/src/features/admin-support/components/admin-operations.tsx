@@ -5,12 +5,24 @@ import {
   ActivityIcon,
   CreditCardIcon,
   EyeIcon,
+  PencilIcon,
+  PowerIcon,
   RefreshCwIcon,
   RotateCcwIcon,
   ShieldCheckIcon,
   Trash2Icon,
   UserRoundCheckIcon,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { showErrorToast, showSuccessToast } from "@/lib/toast";
@@ -18,12 +30,15 @@ import { showErrorToast, showSuccessToast } from "@/lib/toast";
 type Plan = {
   id: string;
   name: string;
+  description: string | null;
   monthlyPrice: string;
   yearlyPrice: string;
   maxStores: number;
   maxProducts: number;
   maxUsers: number;
   storageMb: number;
+  isActive: boolean;
+  _count: { subscriptions: number };
 };
 
 type Merchant = {
@@ -173,14 +188,7 @@ export function AdminOperations() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <PlanCreator
-          onCreate={async (input) => {
-            await runAction(
-              { action: "CREATE_PLAN", ...input },
-              "Subscription plan created",
-            );
-          }}
-        />
+        <PlanManager plans={data.plans} onAction={runAction} />
         <PaymentRecorder
           merchants={data.merchants.filter((merchant) => !merchant.deletedAt)}
           onRecord={async (input) => {
@@ -367,11 +375,17 @@ function MerchantRow({
           onChange={(event) => setPlanId(event.target.value)}
           className="h-9 rounded-md border bg-background px-2 text-xs"
         >
-          {plans.map((plan) => (
-            <option key={plan.id} value={plan.id}>
-              {plan.name}
-            </option>
-          ))}
+          {plans
+            .filter(
+              (plan) =>
+                plan.isActive || plan.id === merchant.subscription?.plan.id,
+            )
+            .map((plan) => (
+              <option key={plan.id} value={plan.id}>
+                {plan.name}
+                {plan.isActive ? "" : " (inactive)"}
+              </option>
+            ))}
         </select>
         <Button
           size="sm"
@@ -451,82 +465,241 @@ function MerchantRow({
   );
 }
 
-function PlanCreator({
-  onCreate,
+function PlanManager({
+  plans,
+  onAction,
 }: {
-  onCreate: (input: Record<string, unknown>) => Promise<void>;
+  plans: Plan[];
+  onAction: (
+    input: Record<string, unknown>,
+    success: string,
+  ) => Promise<unknown>;
+}) {
+  const [editingPlan, setEditingPlan] = React.useState<Plan | null>(null);
+  const [deletePlan, setDeletePlan] = React.useState<Plan | null>(null);
+
+  return (
+    <section className="rounded-2xl border bg-card p-5 shadow-sm">
+      <h2 className="font-semibold">
+        {editingPlan ? `Edit ${editingPlan.name}` : "Subscription plans"}
+      </h2>
+      <p className="text-sm text-muted-foreground">
+        Create packages, correct plan details, or retire plans safely.
+      </p>
+
+      <form
+        key={editingPlan?.id ?? "new"}
+        className="mt-4 grid gap-3 sm:grid-cols-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const formElement = event.currentTarget;
+          const form = new FormData(formElement);
+          const input: Record<string, unknown> = Object.fromEntries(form);
+          for (const key of [
+            "monthlyPrice",
+            "yearlyPrice",
+            "maxStores",
+            "maxProducts",
+            "maxUsers",
+            "storageMb",
+          ]) {
+            input[key] = Number(input[key]);
+          }
+          void onAction(
+            {
+              action: editingPlan ? "UPDATE_PLAN" : "CREATE_PLAN",
+              ...(editingPlan ? { planId: editingPlan.id } : {}),
+              ...input,
+            },
+            editingPlan
+              ? "Subscription plan updated"
+              : "Subscription plan created",
+          ).then((result) => {
+            if (!result) return;
+            setEditingPlan(null);
+            formElement.reset();
+          });
+        }}
+      >
+        <Input
+          name="name"
+          placeholder="Plan name"
+          defaultValue={editingPlan?.name}
+          required
+        />
+        <Input
+          name="description"
+          placeholder="Short description (optional)"
+          defaultValue={editingPlan?.description ?? ""}
+        />
+        <PlanNumberInput
+          name="monthlyPrice"
+          placeholder="Monthly USD"
+          step="0.01"
+          defaultValue={editingPlan?.monthlyPrice}
+        />
+        <PlanNumberInput
+          name="yearlyPrice"
+          placeholder="Yearly USD"
+          step="0.01"
+          defaultValue={editingPlan?.yearlyPrice}
+        />
+        <PlanNumberInput
+          name="maxStores"
+          placeholder="Store limit"
+          defaultValue={editingPlan?.maxStores}
+        />
+        <PlanNumberInput
+          name="maxProducts"
+          placeholder="Product limit"
+          defaultValue={editingPlan?.maxProducts}
+        />
+        <PlanNumberInput
+          name="maxUsers"
+          placeholder="User limit"
+          defaultValue={editingPlan?.maxUsers}
+        />
+        <PlanNumberInput
+          name="storageMb"
+          placeholder="Storage MB"
+          defaultValue={editingPlan?.storageMb}
+        />
+        <div className="flex gap-2 sm:col-span-2">
+          <Button type="submit">
+            {editingPlan ? "Save changes" : "Create plan"}
+          </Button>
+          {editingPlan ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setEditingPlan(null)}
+            >
+              Cancel
+            </Button>
+          ) : null}
+        </div>
+      </form>
+
+      <div className="mt-5 divide-y border-t">
+        {plans.map((plan) => (
+          <div
+            key={plan.id}
+            className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm font-medium">{plan.name}</p>
+                <Badge>{plan.isActive ? "ACTIVE" : "INACTIVE"}</Badge>
+                <span className="text-xs text-muted-foreground">
+                  {plan._count.subscriptions} assigned
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                ${plan.monthlyPrice}/month · ${plan.yearlyPrice}/year ·{" "}
+                {plan.maxStores} stores · {plan.maxProducts} products
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setEditingPlan(plan)}
+              >
+                <PencilIcon /> Edit
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  void onAction(
+                    {
+                      action: "SET_PLAN_ACTIVE",
+                      planId: plan.id,
+                      isActive: !plan.isActive,
+                    },
+                    plan.isActive ? "Plan deactivated" : "Plan reactivated",
+                  )
+                }
+              >
+                <PowerIcon /> {plan.isActive ? "Deactivate" : "Reactivate"}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive"
+                onClick={() => setDeletePlan(plan)}
+              >
+                <Trash2Icon /> Delete
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <AlertDialog
+        open={Boolean(deletePlan)}
+        onOpenChange={(open) => {
+          if (!open) setDeletePlan(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete {deletePlan?.name ?? "this plan"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletePlan?._count.subscriptions
+                ? `This plan is assigned to ${deletePlan._count.subscriptions} merchant subscription(s), so it cannot be deleted. Deactivate it instead to preserve billing history.`
+                : "This permanently removes the unused plan. This action cannot be undone."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              {deletePlan?._count.subscriptions ? "Close" : "Cancel"}
+            </AlertDialogCancel>
+            {deletePlan && deletePlan._count.subscriptions === 0 ? (
+              <AlertDialogAction
+                variant="destructive"
+                onClick={() => {
+                  const planId = deletePlan.id;
+                  setDeletePlan(null);
+                  void onAction(
+                    { action: "DELETE_PLAN", planId },
+                    "Unused subscription plan deleted",
+                  );
+                }}
+              >
+                Delete permanently
+              </AlertDialogAction>
+            ) : null}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </section>
+  );
+}
+
+function PlanNumberInput({
+  name,
+  placeholder,
+  defaultValue,
+  step = "1",
+}: {
+  name: string;
+  placeholder: string;
+  defaultValue?: string | number;
+  step?: string;
 }) {
   return (
-    <form
-      className="rounded-2xl border bg-card p-5 shadow-sm"
-      onSubmit={(event) => {
-        event.preventDefault();
-        const form = new FormData(event.currentTarget);
-        const input: Record<string, unknown> = Object.fromEntries(form);
-        for (const key of [
-          "monthlyPrice",
-          "yearlyPrice",
-          "maxStores",
-          "maxProducts",
-          "maxUsers",
-          "storageMb",
-        ]) {
-          input[key] = Number(input[key]);
-        }
-        void onCreate(input);
-        event.currentTarget.reset();
-      }}
-    >
-      <h2 className="font-semibold">Create subscription plan</h2>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <Input name="name" placeholder="Plan name" required />
-        <Input
-          name="monthlyPrice"
-          type="number"
-          min="0.01"
-          step="0.01"
-          placeholder="Monthly USD"
-          required
-        />
-        <Input
-          name="yearlyPrice"
-          type="number"
-          min="0.01"
-          step="0.01"
-          placeholder="Yearly USD"
-          required
-        />
-        <Input
-          name="maxStores"
-          type="number"
-          min="1"
-          placeholder="Store limit"
-          required
-        />
-        <Input
-          name="maxProducts"
-          type="number"
-          min="1"
-          placeholder="Product limit"
-          required
-        />
-        <Input
-          name="maxUsers"
-          type="number"
-          min="1"
-          placeholder="User limit"
-          required
-        />
-        <Input
-          name="storageMb"
-          type="number"
-          min="1"
-          placeholder="Storage MB"
-          required
-        />
-        <Button type="submit">Create plan</Button>
-      </div>
-    </form>
+    <Input
+      name={name}
+      type="number"
+      min={step === "0.01" ? "0.01" : "1"}
+      step={step}
+      placeholder={placeholder}
+      defaultValue={defaultValue}
+      required
+    />
   );
 }
 
