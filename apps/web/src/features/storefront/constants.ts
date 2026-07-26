@@ -59,7 +59,7 @@ export const STOREFRONT_COPY = {
     allMenu: "មុខម្ហូបទាំងអស់",
     menuCategories: "ប្រភេទមុខម្ហូប",
     menuEyebrow: "ម៉ឺនុយរបស់យើង",
-    menuTitle: "បទពិសោធន៍រសជាតិកម្ពុជា",
+    menuTitle: "បទពិសោធន៍រស់ជាតិខ្មែរ",
     menuDescription:
       "លើសពីអាហារមួយពេល — ជាការអបអរសាទររសជាតិ វប្បធម៌ និងបដិសណ្ឋារកិច្ចខ្មែរ។",
     item: "មុខ",
