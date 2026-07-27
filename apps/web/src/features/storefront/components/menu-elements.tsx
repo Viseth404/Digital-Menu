@@ -277,12 +277,6 @@ export function MenuSectionHeader({
           <p className="text-[0.68rem] font-bold uppercase tracking-[0.25em] text-[var(--store-primary)]">
             {copy.menuEyebrow}
           </p>
-          <h2 className="mt-2 text-3xl font-bold tracking-[-0.025em] text-[var(--menu-text)] sm:text-4xl">
-            {copy.menuTitle}
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-[var(--menu-muted)] sm:text-base">
-            {copy.menuDescription}
-          </p>
         </div>
         <span className="mb-1 shrink-0 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-3 py-1.5 text-xs font-bold text-[var(--menu-muted)]">
           {totalProducts} {totalProducts === 1 ? copy.item : copy.items}
