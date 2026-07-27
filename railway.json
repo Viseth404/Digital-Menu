@@ -6,7 +6,7 @@
   },
   "deploy": {
     "preDeployCommand": [
-      "npm exec prisma db push -- --schema apps/web/prisma/schema.prisma"
+      "npm exec prisma db push -- --schema apps/web/prisma/schema.prisma --accept-data-loss"
     ],
     "startCommand": "npm run start --workspace=apps/web",
     "healthcheckPath": "/api/health",
