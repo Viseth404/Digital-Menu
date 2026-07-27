@@ -356,8 +356,12 @@ function RecentInvoices({ analytics }: { analytics: StoreAnalytics }) {
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">
-                  Table {order.tableNumber} · #
-                  {order.id.slice(-6).toUpperCase()}
+                  {order.source === "MANUAL"
+                    ? "Walk-in sale"
+                    : order.tableNumber
+                      ? `Table ${order.tableNumber}`
+                      : "Shared QR"}{" "}
+                  · #{order.id.slice(-6).toUpperCase()}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {new Date(order.createdAt).toLocaleString()}

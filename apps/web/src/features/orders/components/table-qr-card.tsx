@@ -68,3 +68,43 @@ export function TableQrCard({
     </article>
   );
 }
+
+export function SharedQrCard({ url }: { url: string }) {
+  const [imageUrl, setImageUrl] = React.useState("");
+
+  React.useEffect(() => {
+    QRCode.toDataURL(url, {
+      width: 320,
+      margin: 2,
+      color: { dark: "#18181B", light: "#FFFFFF" },
+    }).then(setImageUrl);
+  }, [url]);
+
+  return (
+    <article className="max-w-sm rounded-2xl border bg-card p-4 shadow-sm">
+      <div className="mx-auto grid aspect-square max-w-52 place-items-center overflow-hidden rounded-xl border bg-white p-3">
+        {imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={imageUrl} alt="Shared customer ordering QR code" />
+        ) : (
+          <QrCodeIcon className="size-10 text-muted-foreground" />
+        )}
+      </div>
+      <div className="mt-4 text-center">
+        <h3 className="text-lg font-semibold">Shared ordering QR</h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Print this one QR code for the whole café.
+        </p>
+      </div>
+      <Button
+        variant="outline"
+        className="mt-4 w-full"
+        disabled={!imageUrl}
+        nativeButton={false}
+        render={<a href={imageUrl} download="shared-ordering-qr.png" />}
+      >
+        <DownloadIcon /> Download
+      </Button>
+    </article>
+  );
+}

@@ -78,6 +78,13 @@ export async function GET(request: NextRequest) {
             slug: store.slug,
             status: store.status,
             isPublished: store.isPublished,
+            allowSharedQrOrdering: store.allowSharedQrOrdering,
+            allowTableOrdering: store.allowTableOrdering,
+            allowTelegramAlerts: store.allowTelegramAlerts,
+            allowKitchenBoard: store.allowKitchenBoard,
+            orderingMode: store.orderingMode,
+            telegramAlertsEnabled: store.telegramAlertsEnabled,
+            telegramChatId: store.telegramChatId,
             currency: store.currency,
             updatedAt: store.updatedAt,
             counts: {

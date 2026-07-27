@@ -1,5 +1,6 @@
 export type MerchantStatus = "PENDING" | "ACTIVE" | "SUSPENDED";
 export type StoreStatus = "ACTIVE" | "INACTIVE";
+export type OrderingMode = "MENU_ONLY" | "SHARED_QR" | "TABLE_QR";
 export type MembershipRole = "OWNER" | "MANAGER" | "STAFF";
 
 export type SupportUser = {
@@ -17,6 +18,13 @@ export type SupportStore = {
   slug: string;
   status: StoreStatus;
   isPublished: boolean;
+  allowSharedQrOrdering: boolean;
+  allowTableOrdering: boolean;
+  allowTelegramAlerts: boolean;
+  allowKitchenBoard: boolean;
+  orderingMode: OrderingMode;
+  telegramAlertsEnabled: boolean;
+  telegramChatId: string | null;
   currency: string;
   updatedAt: string;
   counts: {

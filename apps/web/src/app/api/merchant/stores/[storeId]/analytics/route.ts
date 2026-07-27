@@ -98,7 +98,9 @@ export async function GET(request: NextRequest, context: Context) {
         .slice(0, 5),
       recentOrders: orders.slice(0, 8).map((order) => ({
         id: order.id,
-        tableNumber: order.table.number,
+        source: order.source,
+        tableNumber: order.table?.number ?? null,
+        paymentMethod: order.paymentMethod,
         status: order.status,
         total: Number(order.subtotal),
         createdAt: order.createdAt,

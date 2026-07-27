@@ -2,6 +2,7 @@ import { apiRequest } from "@/lib/api-client";
 import type {
   MembershipRole,
   MerchantStatus,
+  OrderingMode,
   StoreStatus,
   SupportMerchant,
 } from "./types";
@@ -22,12 +23,29 @@ export function updateMerchantStatus(
 
 export function updateSupportStore(
   storeId: string,
-  input: { status?: StoreStatus; isPublished?: boolean },
+  input: {
+    status?: StoreStatus;
+    isPublished?: boolean;
+    allowSharedQrOrdering?: boolean;
+    allowTableOrdering?: boolean;
+    allowTelegramAlerts?: boolean;
+    allowKitchenBoard?: boolean;
+    orderingMode?: OrderingMode;
+    telegramAlertsEnabled?: boolean;
+    telegramChatId?: string | null;
+  },
 ) {
   return apiRequest<{
     id: string;
     status: StoreStatus;
     isPublished: boolean;
+    allowSharedQrOrdering: boolean;
+    allowTableOrdering: boolean;
+    allowTelegramAlerts: boolean;
+    allowKitchenBoard: boolean;
+    orderingMode: OrderingMode;
+    telegramAlertsEnabled: boolean;
+    telegramChatId: string | null;
   }>(`/admin/stores/${storeId}`, {
     method: "PATCH",
     body: JSON.stringify(input),

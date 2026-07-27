@@ -57,6 +57,8 @@ export type StorefrontStore = {
   exchangeRate: number;
   merchantName: string;
   socialLinks: [string, string][];
+  orderingMode: "MENU_ONLY" | "SHARED_QR" | "TABLE_QR";
+  sharedOrderToken: string | null;
   orderingTable: {
     id: string;
     number: number;

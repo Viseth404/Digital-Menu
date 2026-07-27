@@ -27,17 +27,19 @@ export type PlatformOverview = {
 
 export type AdminOrder = {
   id: string;
+  source: "SHARED_QR" | "TABLE_QR" | "MANUAL";
   status: string;
   subtotal: string;
   currency: string;
   note: string | null;
+  paymentMethod: string | null;
   createdAt: string;
   store: {
     id: string;
     name: string;
     merchant: { id: string; name: string };
   };
-  table: { number: number };
+  table: { number: number } | null;
   items: Array<{
     id: string;
     productName: string;
@@ -87,6 +89,8 @@ export type SystemHealth = {
     defaultCurrency: string;
     uploadLimitMb: number;
     sessionDurationDays: number;
+    telegramBotConfigured: boolean;
+    removeBgConfigured: boolean;
     updatedAt: string;
   };
   version: string;

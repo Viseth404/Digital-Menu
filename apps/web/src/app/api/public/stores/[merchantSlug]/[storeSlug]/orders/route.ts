@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { OrderSource, OrderingMode, Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { ApiException, handleApiError } from "@/lib/server/api-response";
 import { prisma } from "@/lib/server/prisma";
@@ -8,6 +8,7 @@ import {
   readString,
 } from "@/lib/server/validation";
 import { findPublicStore } from "@/features/stores/server";
+import { sendTelegramOrderAlert } from "@/features/orders/server/telegram";
 
 type Context = {
   params: Promise<{ merchantSlug: string; storeSlug: string }>;
@@ -20,18 +21,39 @@ export async function POST(request: NextRequest, context: Context) {
     if (!store) throw new ApiException("Storefront not found", 404);
 
     const body = readObject(await request.json());
-    const tableId = readString(body, "tableId")!;
-    const tableToken = readString(body, "tableToken")!;
-    const table = await prisma.diningTable.findFirst({
-      where: {
-        id: tableId,
-        storeId: store.id,
-        orderToken: tableToken,
-        isActive: true,
-      },
-      select: { id: true },
-    });
-    if (!table) throw new ApiException("Select a valid table", 400);
+    const source = readString(body, "source") as OrderSource;
+    const orderToken = readString(body, "orderToken")!;
+    if (!Object.values(OrderSource).includes(source)) {
+      throw new ApiException("Invalid order source", 400);
+    }
+    let tableId: string | undefined;
+    if (source === OrderSource.SHARED_QR) {
+      if (
+        store.orderingMode !== OrderingMode.SHARED_QR ||
+        !store.allowSharedQrOrdering ||
+        orderToken !== store.sharedOrderToken
+      ) {
+        throw new ApiException("Shared QR ordering is unavailable", 403);
+      }
+    } else {
+      if (
+        store.orderingMode !== OrderingMode.TABLE_QR ||
+        !store.allowTableOrdering
+      ) {
+        throw new ApiException("Table ordering is unavailable", 403);
+      }
+      tableId = readString(body, "tableId")!;
+      const table = await prisma.diningTable.findFirst({
+        where: {
+          id: tableId,
+          storeId: store.id,
+          orderToken,
+          isActive: true,
+        },
+        select: { id: true },
+      });
+      if (!table) throw new ApiException("Select a valid table", 400);
+    }
 
     if (!Array.isArray(body.items) || body.items.length === 0) {
       throw new ApiException("Your order is empty", 400);
@@ -141,6 +163,7 @@ export async function POST(request: NextRequest, context: Context) {
       data: {
         storeId: store.id,
         tableId,
+        source,
         currency: store.currency,
         subtotal: new Prisma.Decimal(subtotal.toFixed(2)),
         note: readNullableString(body, "note"),
@@ -151,6 +174,9 @@ export async function POST(request: NextRequest, context: Context) {
         items: { include: { options: true } },
       },
     });
+    void sendTelegramOrderAlert(store, order).catch((error) =>
+      console.error("Unable to send Telegram order alert", error),
+    );
     return NextResponse.json(order, { status: 201 });
   } catch (error) {
     return handleApiError(error);

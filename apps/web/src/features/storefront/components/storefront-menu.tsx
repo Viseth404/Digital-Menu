@@ -195,6 +195,7 @@ export function StorefrontMenu({ store, categoryGroups }: StorefrontMenuProps) {
                         exchangeRate={store.exchangeRate}
                         language={language}
                         onAdd={
+                          store.orderingMode === "SHARED_QR" ||
                           store.orderingTable
                             ? () => {
                                 if (product.optionGroups.length) {
@@ -225,7 +226,7 @@ export function StorefrontMenu({ store, categoryGroups }: StorefrontMenuProps) {
           )}
         </div>
 
-        {store.orderingTable ? (
+        {store.orderingMode === "SHARED_QR" || store.orderingTable ? (
           <OrderCart
             store={localizedStore}
             entries={cartEntries}

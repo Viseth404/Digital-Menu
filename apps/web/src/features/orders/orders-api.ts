@@ -1,6 +1,7 @@
 import { apiRequest } from "@/lib/api-client";
 import type {
   CreateOrderInput,
+  CreateManualSaleInput,
   DiningTable,
   OrderStatus,
   StoreOrder,
@@ -29,6 +30,16 @@ export function deleteStoreTable(storeId: string, tableId: string) {
 export function getStoreOrders(storeId: string, signal?: AbortSignal) {
   return apiRequest<StoreOrder[]>(`/merchant/stores/${storeId}/orders`, {
     signal,
+  });
+}
+
+export function createManualSale(
+  storeId: string,
+  input: CreateManualSaleInput,
+) {
+  return apiRequest<StoreOrder>(`/merchant/stores/${storeId}/orders`, {
+    method: "POST",
+    body: JSON.stringify(input),
   });
 }
 

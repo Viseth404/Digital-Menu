@@ -164,6 +164,7 @@ export function ProductEditor({
             name="imageUrl"
             defaultValue={product?.imageUrl}
             aspect="product"
+            allowBackgroundRemoval
           />
           <Field label="Display order">
             <Input

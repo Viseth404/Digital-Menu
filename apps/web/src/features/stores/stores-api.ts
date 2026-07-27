@@ -92,9 +92,13 @@ export function updateMerchantStore(storeId: string, input: UpdateStoreInput) {
   });
 }
 
-export function uploadMerchantImage(file: File) {
+export function uploadMerchantImage(
+  file: File,
+  options?: { removeBackground?: boolean },
+) {
   const body = new FormData();
   body.set("file", file);
+  if (options?.removeBackground) body.set("removeBackground", "true");
   return apiRequest<{ url: string }>("/merchant/uploads", {
     method: "POST",
     body,

@@ -92,7 +92,21 @@ export async function GET(request: NextRequest) {
           ? "External backup monitoring is configured."
           : "No verifiable backup monitor is configured. Configure BACKUP_STATUS_URL before relying on automated backups.",
       },
-      settings,
+      settings: {
+        maintenanceMode: settings.maintenanceMode,
+        announcement: settings.announcement,
+        supportEmail: settings.supportEmail,
+        defaultCurrency: settings.defaultCurrency,
+        uploadLimitMb: settings.uploadLimitMb,
+        sessionDurationDays: settings.sessionDurationDays,
+        telegramBotConfigured: Boolean(
+          settings.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN,
+        ),
+        removeBgConfigured: Boolean(
+          settings.removeBgApiKey || process.env.REMOVE_BG_API_KEY,
+        ),
+        updatedAt: settings.updatedAt,
+      },
       version: process.env.npm_package_version ?? "0.1.0",
       checkedAt: new Date(),
     });

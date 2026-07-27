@@ -73,7 +73,8 @@ export function OrderCart({
   );
 
   async function submitOrder() {
-    if (!store.orderingTable) return;
+    if (store.orderingMode === "MENU_ONLY") return;
+    if (store.orderingMode === "TABLE_QR" && !store.orderingTable) return;
     if (!entries.length) return;
     setSubmitting(true);
     setMessage("");
@@ -82,8 +83,12 @@ export function OrderCart({
         store.merchantSlug,
         store.storeSlug,
         {
-          tableId: store.orderingTable.id,
-          tableToken: store.orderingTable.token,
+          source: store.orderingMode,
+          tableId: store.orderingTable?.id,
+          orderToken:
+            store.orderingMode === "SHARED_QR"
+              ? store.sharedOrderToken!
+              : store.orderingTable!.token,
           note: note.trim() || undefined,
           items: entries.map(({ product, quantity, selectedOptions }) => ({
             productId: product.id,
@@ -129,7 +134,9 @@ export function OrderCart({
           <span className="mt-0.5 block truncate text-xs text-white/75">
             {itemCount
               ? `${itemCount} ${itemCount === 1 ? copy.item : copy.items} · ${formattedTotal}`
-              : `${copy.orderingForTable} ${store.orderingTable?.number}`}
+              : store.orderingMode === "SHARED_QR"
+                ? copy.startOrder
+                : `${copy.orderingForTable} ${store.orderingTable?.number}`}
           </span>
         </span>
         <ChevronUpIcon className="size-5 shrink-0 text-[#D4AF37]" />
@@ -154,12 +161,16 @@ export function OrderCart({
                 {copy.yourOrder}
               </SheetTitle>
               <SheetDescription>
-                {copy.table} {store.orderingTable?.number} · {copy.confirmItems}
+                {store.orderingMode === "SHARED_QR"
+                  ? copy.confirmItems
+                  : `${copy.table} ${store.orderingTable?.number} · ${copy.confirmItems}`}
               </SheetDescription>
             </SheetHeader>
             <div className="flex-1 overflow-y-auto p-6">
               <div className="rounded-xl border bg-[var(--store-accent)] p-3 text-sm font-semibold text-[var(--store-primary)]">
-                {copy.orderingForTable} {store.orderingTable?.number}
+                {store.orderingMode === "SHARED_QR"
+                  ? copy.yourOrder
+                  : `${copy.orderingForTable} ${store.orderingTable?.number}`}
               </div>
 
               <div className="my-5 divide-y">
@@ -300,7 +311,9 @@ function Invoice({
               {copy.invoice} #{order.id.slice(-8).toUpperCase()}
             </p>
             <p className="mt-1 text-lg font-semibold">
-              {copy.table} {order.table.number}
+              {order.table
+                ? `${copy.table} ${order.table.number}`
+                : copy.yourOrder}
             </p>
           </div>
           <ReceiptTextIcon className="size-6 text-muted-foreground" />
