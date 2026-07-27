@@ -80,8 +80,10 @@ export function PlatformOrdersManager() {
             "Invoice",
             "Merchant",
             "Store",
+            "Source",
             "Table",
             "Status",
+            "Payment",
             "Created",
             "Currency",
             "Total",
@@ -91,15 +93,17 @@ export function PlatformOrdersManager() {
             order.id,
             order.store.merchant.name,
             order.store.name,
-            order.table.number,
+            order.source,
+            order.table?.number ?? "",
             order.status,
+            order.paymentMethod,
             new Date(order.createdAt),
             order.currency,
             Number(order.subtotal),
             order.note,
           ]),
-          dateColumns: [5],
-          currencyColumns: [7],
+          dateColumns: [7],
+          currencyColumns: [9],
         },
         {
           name: "Order Items",
@@ -231,7 +235,7 @@ export function PlatformOrdersManager() {
                     {order.store.merchant.name} · {order.store.name}
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Table {order.table.number} ·{" "}
+                    {adminOrderLocation(order)} ·{" "}
                     {new Date(order.createdAt).toLocaleString()}
                   </p>
                 </div>
@@ -299,6 +303,11 @@ export function PlatformOrdersManager() {
 
 function formatLabel(value: string) {
   return value.charAt(0) + value.slice(1).toLowerCase().replaceAll("_", " ");
+}
+
+function adminOrderLocation(order: AdminOrder) {
+  if (order.source === "MANUAL") return "Walk-in sale";
+  return order.table ? `Table ${order.table.number}` : "Shared QR";
 }
 
 function formatMoney(value: string, currency: string) {

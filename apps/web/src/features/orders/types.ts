@@ -45,22 +45,31 @@ export type OrderItem = {
 
 export type StoreOrder = {
   id: string;
+  source: "SHARED_QR" | "TABLE_QR" | "MANUAL";
   status: OrderStatus;
   subtotal: string;
   currency: string;
   note: string | null;
+  paymentMethod: "ABA" | "WING" | "BANK_TRANSFER" | "CASH" | "OTHER" | null;
   createdAt: string;
-  table: { id: string; number: number; name: string | null };
+  table: { id: string; number: number; name: string | null } | null;
   items: OrderItem[];
 };
 
 export type CreateOrderInput = {
-  tableId: string;
-  tableToken: string;
+  source: "SHARED_QR" | "TABLE_QR";
+  tableId?: string;
+  orderToken: string;
   note?: string;
   items: Array<{
     productId: string;
     quantity: number;
     selectedOptionIds?: string[];
   }>;
+};
+
+export type CreateManualSaleInput = {
+  paymentMethod: "ABA" | "WING" | "BANK_TRANSFER" | "CASH" | "OTHER";
+  note?: string;
+  items: Array<{ productId: string; quantity: number }>;
 };

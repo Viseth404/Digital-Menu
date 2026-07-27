@@ -12,6 +12,7 @@ type ImageUploadFieldProps = {
   defaultValue?: string | null;
   description?: string;
   aspect?: "square" | "cover" | "product";
+  allowBackgroundRemoval?: boolean;
 };
 
 const aspectClasses = {
@@ -26,12 +27,14 @@ export function ImageUploadField({
   defaultValue,
   description = "JPG, PNG, WebP, or GIF. Maximum 5 MB.",
   aspect = "product",
+  allowBackgroundRemoval = false,
 }: ImageUploadFieldProps) {
   const inputId = React.useId();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [url, setUrl] = React.useState(defaultValue ?? "");
   const [isUploading, setIsUploading] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [removeBackground, setRemoveBackground] = React.useState(false);
 
   async function handleFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -40,7 +43,7 @@ export function ImageUploadField({
     setIsUploading(true);
     setError("");
     try {
-      const result = await uploadMerchantImage(file);
+      const result = await uploadMerchantImage(file, { removeBackground });
       setUrl(result.url);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Upload failed");
@@ -94,7 +97,25 @@ export function ImageUploadField({
           onChange={handleFile}
           disabled={isUploading}
         />
+        {allowBackgroundRemoval ? (
+          <label className="ml-auto flex cursor-pointer items-center gap-3 rounded-full border bg-background px-4 py-2 shadow-sm">
+            <input
+              type="checkbox"
+              checked={removeBackground}
+              onChange={(event) => setRemoveBackground(event.target.checked)}
+              disabled={isUploading}
+              className="peer sr-only"
+            />
+            <span className="relative h-6 w-11 rounded-full bg-muted transition peer-checked:bg-foreground peer-disabled:opacity-50 after:absolute after:left-1 after:top-1 after:size-4 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:after:translate-x-5" />
+            <span className="text-sm font-semibold">Remove BG</span>
+          </label>
+        ) : null}
       </div>
+      {allowBackgroundRemoval && removeBackground ? (
+        <p className="text-xs text-muted-foreground">
+          The background will be replaced automatically with clean white.
+        </p>
+      ) : null}
       <p className="text-xs text-muted-foreground">{description}</p>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>

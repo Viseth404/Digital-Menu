@@ -131,7 +131,17 @@ export function MerchantSupportConsole() {
   async function setStoreState(
     merchantId: string,
     store: SupportStore,
-    input: { status?: StoreStatus; isPublished?: boolean },
+    input: {
+      status?: StoreStatus;
+      isPublished?: boolean;
+      allowSharedQrOrdering?: boolean;
+      allowTableOrdering?: boolean;
+      allowTelegramAlerts?: boolean;
+      allowKitchenBoard?: boolean;
+      orderingMode?: SupportStore["orderingMode"];
+      telegramAlertsEnabled?: boolean;
+      telegramChatId?: string | null;
+    },
   ) {
     try {
       const result = await updateSupportStore(store.id, input);
@@ -139,6 +149,13 @@ export function MerchantSupportConsole() {
         ...current,
         status: result.status,
         isPublished: result.isPublished,
+        allowSharedQrOrdering: result.allowSharedQrOrdering,
+        allowTableOrdering: result.allowTableOrdering,
+        allowTelegramAlerts: result.allowTelegramAlerts,
+        allowKitchenBoard: result.allowKitchenBoard,
+        orderingMode: result.orderingMode,
+        telegramAlertsEnabled: result.telegramAlertsEnabled,
+        telegramChatId: result.telegramChatId,
       }));
       await loadMerchants();
       setMessage(`${store.name} updated`);
@@ -448,7 +465,17 @@ function MerchantDetail({
   onStatusChange: (status: MerchantStatus) => void;
   onStoreChange: (
     store: SupportStore,
-    input: { status?: StoreStatus; isPublished?: boolean },
+    input: {
+      status?: StoreStatus;
+      isPublished?: boolean;
+      allowSharedQrOrdering?: boolean;
+      allowTableOrdering?: boolean;
+      allowTelegramAlerts?: boolean;
+      allowKitchenBoard?: boolean;
+      orderingMode?: SupportStore["orderingMode"];
+      telegramAlertsEnabled?: boolean;
+      telegramChatId?: string | null;
+    },
   ) => void;
   onUserChange: (userId: string, active: boolean) => void;
   onResetPassword: (userId: string) => void;
@@ -582,10 +609,27 @@ function StoreSupportCard({
 }: {
   merchant: SupportMerchant;
   store: SupportStore;
-  onChange: (input: { status?: StoreStatus; isPublished?: boolean }) => void;
+  onChange: (input: {
+    status?: StoreStatus;
+    isPublished?: boolean;
+    allowSharedQrOrdering?: boolean;
+    allowTableOrdering?: boolean;
+    allowTelegramAlerts?: boolean;
+    allowKitchenBoard?: boolean;
+    orderingMode?: SupportStore["orderingMode"];
+    telegramAlertsEnabled?: boolean;
+    telegramChatId?: string | null;
+  }) => void;
   onRotateQr: () => void;
 }) {
   const path = getPublicStorePath(merchant.slug, store.slug);
+  const [telegramChatId, setTelegramChatId] = React.useState(
+    store.telegramChatId ?? "",
+  );
+  React.useEffect(
+    () => setTelegramChatId(store.telegramChatId ?? ""),
+    [store.telegramChatId],
+  );
   return (
     <article className="rounded-2xl border bg-card p-5 shadow-sm">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -617,6 +661,94 @@ function StoreSupportCard({
             </p>
           </div>
         ))}
+      </div>
+      <div className="mt-4 rounded-xl border p-4">
+        <p className="text-sm font-semibold">Merchant feature permissions</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Restaurant Admin controls which ordering features this store may use.
+        </p>
+        <label className="mt-3 grid gap-1.5 text-sm font-medium">
+          Ordering mode
+          <select
+            value={store.orderingMode}
+            onChange={(event) =>
+              onChange({
+                orderingMode: event.target
+                  .value as SupportStore["orderingMode"],
+              })
+            }
+            className="h-9 rounded-lg border bg-background px-3 text-sm"
+          >
+            <option value="MENU_ONLY">Menu only</option>
+            <option value="SHARED_QR" disabled={!store.allowSharedQrOrdering}>
+              One shared QR
+            </option>
+            <option value="TABLE_QR" disabled={!store.allowTableOrdering}>
+              QR per table
+            </option>
+          </select>
+        </label>
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          {[
+            ["allowSharedQrOrdering", "Shared QR ordering"],
+            ["allowTableOrdering", "Table QR ordering"],
+            ["allowTelegramAlerts", "Telegram alerts"],
+            ["allowKitchenBoard", "Kitchen board"],
+          ].map(([key, label]) => (
+            <label
+              key={key}
+              className="flex items-center gap-2 rounded-lg border p-3 text-sm"
+            >
+              <input
+                type="checkbox"
+                checked={store[key as keyof SupportStore] === true}
+                onChange={(event) => onChange({ [key]: event.target.checked })}
+                className="size-4"
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+        <div className="mt-3 rounded-lg border p-3">
+          <p className="text-sm font-medium">Telegram notification setup</p>
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+            <Input
+              value={telegramChatId}
+              onChange={(event) => setTelegramChatId(event.target.value)}
+              placeholder="Group chat ID, e.g. -1001234567890"
+              disabled={!store.allowTelegramAlerts}
+            />
+            <Button
+              variant="outline"
+              disabled={!store.allowTelegramAlerts}
+              onClick={() =>
+                onChange({
+                  telegramChatId: telegramChatId.trim() || null,
+                })
+              }
+            >
+              Save group
+            </Button>
+          </div>
+          <label className="mt-2 flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={store.telegramAlertsEnabled}
+              disabled={!store.allowTelegramAlerts}
+              onChange={(event) =>
+                onChange({
+                  telegramAlertsEnabled: event.target.checked,
+                  telegramChatId: telegramChatId.trim() || null,
+                })
+              }
+              className="size-4"
+            />
+            Send new-order alerts to this Telegram group
+          </label>
+          <p className="mt-1 text-xs text-muted-foreground">
+            The platform Telegram bot must already be a member of the group.
+          </p>
+        </div>
       </div>
       <Diagnostics messages={store.diagnostics} />
       <div className="mt-4 flex flex-wrap gap-2 border-t pt-4">

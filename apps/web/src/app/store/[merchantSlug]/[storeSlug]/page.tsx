@@ -37,6 +37,10 @@ export default async function StorefrontPage({
 
   const store = await loadStore(merchantSlug, storeSlug);
   const orderingTable = await findQrOrderingTable(store.id, table, token);
+  const canUseTable =
+    store.orderingMode === "TABLE_QR" && store.allowTableOrdering;
+  const canUseShared =
+    store.orderingMode === "SHARED_QR" && store.allowSharedQrOrdering;
 
   const socialLinks = STORE_SOCIALS.map(({ key, label }) => [
     label,
@@ -75,9 +79,13 @@ export default async function StorefrontPage({
         exchangeRate: Number(store.exchangeRate),
         merchantName: store.merchant.name,
         socialLinks,
-        orderingTable: orderingTable
-          ? { ...orderingTable, token: token! }
-          : null,
+        orderingMode:
+          canUseShared || canUseTable ? store.orderingMode : "MENU_ONLY",
+        sharedOrderToken: canUseShared ? store.sharedOrderToken : null,
+        orderingTable:
+          canUseTable && orderingTable
+            ? { ...orderingTable, token: token! }
+            : null,
       }}
       categoryGroups={categoryGroups}
     />

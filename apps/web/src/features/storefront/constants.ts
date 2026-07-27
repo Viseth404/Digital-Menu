@@ -10,9 +10,6 @@ export const STOREFRONT_COPY = {
     allMenu: "All menu",
     menuCategories: "Menu categories",
     menuEyebrow: "Our menu",
-    menuTitle: "Experience Cambodia",
-    menuDescription:
-      "More than a meal — a celebration of Khmer flavor, culture, and hospitality.",
     item: "item",
     items: "items",
     noImage: "No image available",
@@ -59,9 +56,6 @@ export const STOREFRONT_COPY = {
     allMenu: "មុខម្ហូបទាំងអស់",
     menuCategories: "ប្រភេទមុខម្ហូប",
     menuEyebrow: "ម៉ឺនុយរបស់យើង",
-    menuTitle: "បទពិសោធន៍រស់ជាតិខ្មែរ",
-    menuDescription:
-      "លើសពីអាហារមួយពេល — ជាការអបអរសាទររសជាតិ វប្បធម៌ និងបដិសណ្ឋារកិច្ចខ្មែរ។",
     item: "មុខ",
     items: "មុខ",
     noImage: "មិនមានរូបភាព",

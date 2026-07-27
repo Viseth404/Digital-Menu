@@ -23,7 +23,9 @@ export type StoreAnalytics = {
   topItems: Array<{ name: string; quantity: number; revenue: number }>;
   recentOrders: Array<{
     id: string;
-    tableNumber: number;
+    source: "SHARED_QR" | "TABLE_QR" | "MANUAL";
+    tableNumber: number | null;
+    paymentMethod: string | null;
     status: string;
     total: number;
     createdAt: string;

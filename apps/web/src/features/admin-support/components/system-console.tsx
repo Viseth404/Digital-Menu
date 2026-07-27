@@ -55,6 +55,10 @@ export function SystemConsole() {
       defaultCurrency: String(form.get("defaultCurrency")),
       uploadLimitMb: Number(form.get("uploadLimitMb")),
       sessionDurationDays: Number(form.get("sessionDurationDays")),
+      telegramBotToken:
+        String(form.get("telegramBotToken") || "").trim() || undefined,
+      removeBgApiKey:
+        String(form.get("removeBgApiKey") || "").trim() || undefined,
     };
     setSaving(true);
     try {
@@ -296,6 +300,34 @@ export function SystemConsole() {
                 max="90"
                 defaultValue={health.settings.sessionDurationDays}
                 required
+              />
+            </Field>
+            <Field
+              label={`Telegram bot token · ${
+                health.settings.telegramBotConfigured
+                  ? "Configured"
+                  : "Not configured"
+              }`}
+            >
+              <Input
+                name="telegramBotToken"
+                type="password"
+                autoComplete="new-password"
+                placeholder="Leave blank to keep the current token"
+              />
+            </Field>
+            <Field
+              label={`remove.bg API key · ${
+                health.settings.removeBgConfigured
+                  ? "Configured"
+                  : "Not configured"
+              }`}
+            >
+              <Input
+                name="removeBgApiKey"
+                type="password"
+                autoComplete="new-password"
+                placeholder="Leave blank to keep the current key"
               />
             </Field>
             <label className="grid gap-1.5 text-sm font-medium sm:col-span-2">

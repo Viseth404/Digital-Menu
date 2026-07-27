@@ -16,7 +16,7 @@ import {
 export async function GET(request: NextRequest) {
   try {
     await requireRequestUser(request, [UserRole.ADMIN]);
-    return NextResponse.json(await getSettings());
+    return NextResponse.json(sanitizeSettings(await getSettings()));
   } catch (error) {
     return handleApiError(error);
   }
@@ -29,6 +29,12 @@ export async function PATCH(request: NextRequest) {
     const before = await getSettings();
     const supportEmail = readString(body, "supportEmail", { optional: true });
     const defaultCurrency = readString(body, "defaultCurrency", {
+      optional: true,
+    });
+    const telegramBotToken = readString(body, "telegramBotToken", {
+      optional: true,
+    });
+    const removeBgApiKey = readString(body, "removeBgApiKey", {
       optional: true,
     });
     const updated = await prisma.$transaction(async (transaction) => {
@@ -46,6 +52,8 @@ export async function PATCH(request: NextRequest) {
           sessionDurationDays: Math.round(
             readNumber(body, "sessionDurationDays") ?? 7,
           ),
+          telegramBotToken: telegramBotToken || null,
+          removeBgApiKey: removeBgApiKey || null,
         },
         update: {
           maintenanceMode: readBoolean(body, "maintenanceMode"),
@@ -54,6 +62,8 @@ export async function PATCH(request: NextRequest) {
           defaultCurrency,
           uploadLimitMb: numberOrUndefined(body, "uploadLimitMb"),
           sessionDurationDays: numberOrUndefined(body, "sessionDurationDays"),
+          telegramBotToken: telegramBotToken || undefined,
+          removeBgApiKey: removeBgApiKey || undefined,
         },
       });
       await writeAdminAudit(transaction, {
@@ -73,10 +83,23 @@ export async function PATCH(request: NextRequest) {
       });
       return value;
     });
-    return NextResponse.json(updated);
+    return NextResponse.json(sanitizeSettings(updated));
   } catch (error) {
     return handleApiError(error);
   }
+}
+
+function sanitizeSettings(settings: Awaited<ReturnType<typeof getSettings>>) {
+  const { telegramBotToken, removeBgApiKey, ...safe } = settings;
+  return {
+    ...safe,
+    telegramBotConfigured: Boolean(
+      telegramBotToken || process.env.TELEGRAM_BOT_TOKEN,
+    ),
+    removeBgConfigured: Boolean(
+      removeBgApiKey || process.env.REMOVE_BG_API_KEY,
+    ),
+  };
 }
 
 function getSettings() {

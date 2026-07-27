@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { handleApiError } from "@/lib/server/api-response";
+import { ApiException, handleApiError } from "@/lib/server/api-response";
 import { prisma } from "@/lib/server/prisma";
 import { requireManagedStore } from "@/features/stores/merchant-access";
 import { readNumber, readObject } from "@/lib/server/validation";
@@ -25,7 +25,13 @@ export async function GET(request: NextRequest, context: Context) {
 export async function POST(request: NextRequest, context: Context) {
   try {
     const { storeId } = await context.params;
-    await requireManagedStore(request, storeId);
+    const store = await requireManagedStore(request, storeId);
+    if (!store.allowTableOrdering) {
+      throw new ApiException(
+        "Table ordering is not enabled by Restaurant Admin",
+        403,
+      );
+    }
     const body = readObject(await request.json());
     const number = Math.round(readNumber(body, "number")!);
     const table = await prisma.diningTable.create({

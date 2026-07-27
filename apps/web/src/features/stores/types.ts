@@ -25,6 +25,14 @@ export type Store = {
   timezone: string;
   currency: string;
   exchangeRate: string;
+  allowSharedQrOrdering: boolean;
+  allowTableOrdering: boolean;
+  allowTelegramAlerts: boolean;
+  allowKitchenBoard: boolean;
+  orderingMode: "MENU_ONLY" | "SHARED_QR" | "TABLE_QR";
+  sharedOrderToken: string;
+  telegramAlertsEnabled: boolean;
+  telegramChatId: string | null;
   createdAt: string;
   updatedAt: string;
   merchant: {

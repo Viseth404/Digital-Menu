@@ -52,7 +52,13 @@ export function deleteOrphanedUpload(filename: string) {
 }
 
 export function updatePlatformSettings(
-  input: Omit<SystemHealth["settings"], "updatedAt">,
+  input: Omit<
+    SystemHealth["settings"],
+    "updatedAt" | "telegramBotConfigured" | "removeBgConfigured"
+  > & {
+    telegramBotToken?: string;
+    removeBgApiKey?: string;
+  },
 ) {
   return apiRequest<SystemHealth["settings"]>("/admin/settings", {
     method: "PATCH",

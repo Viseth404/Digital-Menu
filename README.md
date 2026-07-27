@@ -22,7 +22,7 @@ authentication, and database access all live in `apps/web`.
 - Light and dark themes
 - Store information drawer
 - Optional promotion popup with title, message, and image
-- Public table ordering through QR-linked menus
+- Admin-controlled menu-only, shared-QR, or table-QR ordering
 - Product choices and add-ons with required and multi-select rules
 
 Published menus use this route:
@@ -38,7 +38,8 @@ Published menus use this route:
 - Store profile, branding, publication, and promotion settings
 - Product and category management
 - Product modifier groups, add-on pricing, and prominent sold-out controls
-- Dining-table and QR-code management
+- Shared and table-specific QR-code management
+- Optional Telegram group alerts for new orders
 - Live order alerts, order tracking, and status updates
 - Kitchen board organized by preparation stage
 - Multiple stores under one merchant organization
@@ -49,6 +50,7 @@ Published menus use this route:
 - Platform overview
 - Merchant and merchant-user management
 - Store and order oversight
+- Per-store ordering, Telegram, and kitchen-board feature permissions
 - Administrator management
 - User activation and password reset controls
 - Platform settings and system health
@@ -161,12 +163,14 @@ features/
 
 ## Environment variables
 
-| Variable         | Required    | Purpose                                    |
-| ---------------- | ----------- | ------------------------------------------ |
-| `DATABASE_URL`   | Yes         | PostgreSQL connection used by Prisma       |
-| `ADMIN_NAME`     | For seeding | Display name for the initial administrator |
-| `ADMIN_EMAIL`    | For seeding | Login email for the initial administrator  |
-| `ADMIN_PASSWORD` | For seeding | Password for the initial administrator     |
+| Variable             | Required           | Purpose                                    |
+| -------------------- | ------------------ | ------------------------------------------ |
+| `DATABASE_URL`       | Yes                | PostgreSQL connection used by Prisma       |
+| `ADMIN_NAME`         | For seeding        | Display name for the initial administrator |
+| `ADMIN_EMAIL`        | For seeding        | Login email for the initial administrator  |
+| `ADMIN_PASSWORD`     | For seeding        | Password for the initial administrator     |
+| `TELEGRAM_BOT_TOKEN` | For alerts         | Platform bot used for store order alerts   |
+| `REMOVE_BG_API_KEY`  | For product images | Server-side remove.bg API key              |
 
 Keep secrets in `apps/web/.env` or the production environment. Do not place
 database credentials or private values in `src/config/app-config.ts`.
@@ -226,7 +230,10 @@ User
 ```
 
 A store owns its catalog, tables, orders, branding, social links, currency,
-publication state, and optional promotion content.
+publication state, ordering mode, and optional promotion content. Restaurant
+Admin grants shared-QR, table-QR, and Telegram capabilities per store; merchant
+ordering mode and Telegram notification setup are controlled entirely by
+Restaurant Admin.
 
 ## Shared configuration
 

@@ -90,7 +90,7 @@ export async function DELETE(request: NextRequest, context: Context) {
           merchant: existing.store.merchant.name,
           storeId: existing.store.id,
           store: existing.store.name,
-          table: existing.table.number,
+          table: existing.table?.number ?? null,
           status: existing.status,
           subtotal: existing.subtotal.toString(),
           currency: existing.currency,
