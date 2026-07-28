@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       where: { id: sessionUser.id },
       select: { passwordHash: true },
     });
-    if (!verifyPassword(currentPassword, user.passwordHash)) {
+    if (!(await verifyPassword(currentPassword, user.passwordHash))) {
       throw new ApiException("Current password is incorrect", 400);
     }
 

@@ -26,8 +26,6 @@ export function updateSupportStore(
   input: {
     status?: StoreStatus;
     isPublished?: boolean;
-    allowSharedQrOrdering?: boolean;
-    allowTableOrdering?: boolean;
     allowTelegramAlerts?: boolean;
     allowKitchenBoard?: boolean;
     orderingMode?: OrderingMode;

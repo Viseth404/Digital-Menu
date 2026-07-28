@@ -38,8 +38,6 @@ export async function PATCH(request: NextRequest, context: Context) {
         telegramChatId: true,
       },
     });
-    const allowSharedQrOrdering = readBoolean(body, "allowSharedQrOrdering");
-    const allowTableOrdering = readBoolean(body, "allowTableOrdering");
     const allowTelegramAlerts = readBoolean(body, "allowTelegramAlerts");
     const allowKitchenBoard = readBoolean(body, "allowKitchenBoard");
     const orderingModeValue = readString(body, "orderingMode", {
@@ -58,33 +56,14 @@ export async function PATCH(request: NextRequest, context: Context) {
       throw new ApiException("Telegram chat ID must contain only digits", 400);
     }
     const result = await prisma.$transaction(async (transaction) => {
+      const orderingMode = requestedOrderingMode ?? existing.orderingMode;
       const permissions = {
-        allowSharedQrOrdering:
-          allowSharedQrOrdering ?? existing.allowSharedQrOrdering,
-        allowTableOrdering: allowTableOrdering ?? existing.allowTableOrdering,
+        allowSharedQrOrdering: orderingMode === OrderingMode.SHARED_QR,
+        allowTableOrdering: orderingMode === OrderingMode.TABLE_QR,
         allowTelegramAlerts:
           allowTelegramAlerts ?? existing.allowTelegramAlerts,
         allowKitchenBoard: allowKitchenBoard ?? existing.allowKitchenBoard,
       };
-      let orderingMode = requestedOrderingMode ?? existing.orderingMode;
-      if (
-        requestedOrderingMode === OrderingMode.SHARED_QR &&
-        !permissions.allowSharedQrOrdering
-      ) {
-        throw new ApiException(
-          "Enable shared QR permission before selecting shared QR mode",
-          400,
-        );
-      }
-      if (
-        requestedOrderingMode === OrderingMode.TABLE_QR &&
-        !permissions.allowTableOrdering
-      ) {
-        throw new ApiException(
-          "Enable table ordering permission before selecting table QR mode",
-          400,
-        );
-      }
       const nextTelegramChatId =
         telegramChatId === undefined ? existing.telegramChatId : telegramChatId;
       const nextTelegramEnabled =
@@ -100,22 +79,6 @@ export async function PATCH(request: NextRequest, context: Context) {
           "Telegram group chat ID is required when alerts are enabled",
           400,
         );
-      }
-      if (
-        orderingMode === OrderingMode.SHARED_QR &&
-        !permissions.allowSharedQrOrdering
-      ) {
-        orderingMode = permissions.allowTableOrdering
-          ? OrderingMode.TABLE_QR
-          : OrderingMode.MENU_ONLY;
-      }
-      if (
-        orderingMode === OrderingMode.TABLE_QR &&
-        !permissions.allowTableOrdering
-      ) {
-        orderingMode = permissions.allowSharedQrOrdering
-          ? OrderingMode.SHARED_QR
-          : OrderingMode.MENU_ONLY;
       }
       const updated = await transaction.store.update({
         where: { id: storeId },

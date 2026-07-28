@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -16,7 +15,6 @@ import { appConfig } from "@/config/app-config";
 import { createSupportMailto } from "@/lib/mailto";
 
 export function LoginForm() {
-  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
 
@@ -32,8 +30,7 @@ export function LoginForm() {
         email: String(formData.get("email")),
         password: String(formData.get("password")),
       });
-      router.replace(appConfig.routes.dashboard);
-      router.refresh();
+      window.location.replace(appConfig.routes.dashboard);
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Unable to sign in",
