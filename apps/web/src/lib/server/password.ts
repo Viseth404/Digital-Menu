@@ -1,6 +1,7 @@
 import {
   createHash,
   randomBytes,
+  scrypt,
   scryptSync,
   timingSafeEqual,
 } from "node:crypto";
@@ -11,12 +12,20 @@ export function hashPassword(password: string): string {
   return `${salt}:${hash}`;
 }
 
-export function verifyPassword(password: string, storedHash: string): boolean {
+export async function verifyPassword(
+  password: string,
+  storedHash: string,
+): Promise<boolean> {
   const [salt, hash] = storedHash.split(":");
   if (!salt || !hash) return false;
 
   const expectedHash = Buffer.from(hash, "hex");
-  const actualHash = scryptSync(password, salt, expectedHash.length);
+  const actualHash = await new Promise<Buffer>((resolve, reject) => {
+    scrypt(password, salt, expectedHash.length, (error, derivedKey) => {
+      if (error) reject(error);
+      else resolve(derivedKey);
+    });
+  });
   return (
     expectedHash.length === actualHash.length &&
     timingSafeEqual(expectedHash, actualHash)

@@ -27,7 +27,7 @@ export async function PATCH(request: NextRequest) {
     if (email !== user.email) {
       if (
         !currentPassword ||
-        !verifyPassword(currentPassword, user.passwordHash)
+        !(await verifyPassword(currentPassword, user.passwordHash))
       ) {
         throw new ApiException(
           "Current password is required to change your login email",

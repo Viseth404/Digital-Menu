@@ -25,10 +25,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const passwordIsValid =
+      user?.isActive && !user.deletedAt
+        ? await verifyPassword(password, user.passwordHash)
+        : false;
+
     if (
       !user?.isActive ||
       user.deletedAt ||
-      !verifyPassword(password, user.passwordHash)
+      !passwordIsValid
     ) {
       if (user && !user.deletedAt) {
         const attempts = user.failedLoginAttempts + 1;

@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { ChevronsUpDownIcon, KeyRoundIcon, LogOutIcon, XIcon } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -30,7 +29,6 @@ type UserMenuProps = {
 };
 
 export function UserMenu({ user }: UserMenuProps) {
-  const router = useRouter();
   const { isMobile } = useSidebar();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [showPasswordForm, setShowPasswordForm] = React.useState(false);
@@ -44,8 +42,7 @@ export function UserMenu({ user }: UserMenuProps) {
 
     try {
       await logout();
-      router.replace(appConfig.routes.login);
-      router.refresh();
+      window.location.replace(appConfig.routes.login);
     } catch {
       setIsLoggingOut(false);
     }

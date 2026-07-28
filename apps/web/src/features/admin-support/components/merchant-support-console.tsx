@@ -134,8 +134,6 @@ export function MerchantSupportConsole() {
     input: {
       status?: StoreStatus;
       isPublished?: boolean;
-      allowSharedQrOrdering?: boolean;
-      allowTableOrdering?: boolean;
       allowTelegramAlerts?: boolean;
       allowKitchenBoard?: boolean;
       orderingMode?: SupportStore["orderingMode"];
@@ -468,8 +466,6 @@ function MerchantDetail({
     input: {
       status?: StoreStatus;
       isPublished?: boolean;
-      allowSharedQrOrdering?: boolean;
-      allowTableOrdering?: boolean;
       allowTelegramAlerts?: boolean;
       allowKitchenBoard?: boolean;
       orderingMode?: SupportStore["orderingMode"];
@@ -665,7 +661,8 @@ function StoreSupportCard({
       <div className="mt-4 rounded-xl border p-4">
         <p className="text-sm font-semibold">Merchant feature permissions</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Restaurant Admin controls which ordering features this store may use.
+          Choose one active ordering mode. Its permission is enabled
+          automatically.
         </p>
         <label className="mt-3 grid gap-1.5 text-sm font-medium">
           Ordering mode
@@ -680,18 +677,12 @@ function StoreSupportCard({
             className="h-9 rounded-lg border bg-background px-3 text-sm"
           >
             <option value="MENU_ONLY">Menu only</option>
-            <option value="SHARED_QR" disabled={!store.allowSharedQrOrdering}>
-              One shared QR
-            </option>
-            <option value="TABLE_QR" disabled={!store.allowTableOrdering}>
-              QR per table
-            </option>
+            <option value="SHARED_QR">One shared QR</option>
+            <option value="TABLE_QR">QR per table</option>
           </select>
         </label>
         <div className="mt-3 grid gap-2 sm:grid-cols-3">
           {[
-            ["allowSharedQrOrdering", "Shared QR ordering"],
-            ["allowTableOrdering", "Table QR ordering"],
             ["allowTelegramAlerts", "Telegram alerts"],
             ["allowKitchenBoard", "Kitchen board"],
           ].map(([key, label]) => (

@@ -40,7 +40,9 @@ export default async function StorefrontPage({
   const canUseTable =
     store.orderingMode === "TABLE_QR" && store.allowTableOrdering;
   const canUseShared =
-    store.orderingMode === "SHARED_QR" && store.allowSharedQrOrdering;
+    store.orderingMode === "SHARED_QR" &&
+    store.allowSharedQrOrdering &&
+    token === store.sharedOrderToken;
 
   const socialLinks = STORE_SOCIALS.map(({ key, label }) => [
     label,

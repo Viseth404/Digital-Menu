@@ -397,7 +397,9 @@ export function OrdersManager() {
       ) : view === "tables" ? (
         <>
           {store?.orderingMode === "SHARED_QR" ? (
-            <SharedQrCard url={`${origin}${storePath}`} />
+            <SharedQrCard
+              url={`${origin}${storePath}?token=${encodeURIComponent(store.sharedOrderToken)}`}
+            />
           ) : null}
           {store?.allowTableOrdering ? (
             <form
