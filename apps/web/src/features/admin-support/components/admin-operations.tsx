@@ -28,6 +28,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { showErrorToast, showSuccessToast } from "@/lib/toast";
+import { formatStorage } from "@/features/stores/format";
 
 type Plan = {
   id: string;
@@ -57,6 +58,10 @@ type Merchant = {
     currentPeriodEnd: string;
     graceEndsAt: string;
     plan: Plan;
+  };
+  quota: null | {
+    products: { used: number; limit: number };
+    storage: { usedBytes: number; limitBytes: number };
   };
   _count: { stores: number; members: number; payments: number };
 };
@@ -382,6 +387,14 @@ function MerchantRow({
           {merchant.contactEmail} · {merchant._count.stores} stores ·{" "}
           {merchant._count.members} users
         </p>
+        {merchant.quota ? (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Products {merchant.quota.products.used}/
+            {merchant.quota.products.limit} · Storage{" "}
+            {formatStorage(merchant.quota.storage.usedBytes)}/
+            {formatStorage(merchant.quota.storage.limitBytes)}
+          </p>
+        ) : null}
         {merchant.subscription ? (
           <p className="mt-1 text-xs text-muted-foreground">
             {merchant.subscription.plan.name} ·{" "}

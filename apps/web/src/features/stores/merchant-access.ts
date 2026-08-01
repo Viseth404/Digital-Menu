@@ -57,12 +57,12 @@ export async function requireManagedProduct(
   storeId: string,
   productId: string,
 ) {
-  await requireManagedStore(request, storeId);
+  const store = await requireManagedStore(request, storeId);
   const product = await prisma.product.findFirst({
     where: { id: productId, storeId },
   });
   if (!product) throw new ApiException("Product not found", 404);
-  return product;
+  return { ...product, merchantId: store.merchantId };
 }
 
 export async function requireManagedCategory(

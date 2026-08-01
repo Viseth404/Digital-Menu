@@ -11,3 +11,8 @@ export function formatStorePrice(
     maximumFractionDigits: currency === "KHR" ? 0 : 2,
   }).format(value);
 }
+
+export function formatStorage(bytes: number) {
+  const megabytes = bytes / (1024 * 1024);
+  return `${megabytes < 10 ? megabytes.toFixed(1) : Math.round(megabytes)} MB`;
+}

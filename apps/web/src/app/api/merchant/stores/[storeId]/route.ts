@@ -5,6 +5,10 @@ import { prisma } from "@/lib/server/prisma";
 import { requireManagedStore } from "@/features/stores/merchant-access";
 import { PROMOTION_RULES, STORE_THEME } from "@/features/stores/constants";
 import {
+  deleteUploadIfUnreferenced,
+  getMerchantQuota,
+} from "@/features/subscriptions/server/quotas";
+import {
   assertOptionalImageUrl,
   assertOptionalUrl,
   readBoolean,
@@ -131,7 +135,21 @@ export async function PATCH(request: NextRequest, context: StoreRouteContext) {
         _count: { select: { products: true } },
       },
     });
-    return NextResponse.json(updatedStore);
+    await Promise.all(
+      [store.logoUrl, store.coverImageUrl, store.promotionImageUrl]
+        .filter(
+          (url) =>
+            url &&
+            url !== updatedStore.logoUrl &&
+            url !== updatedStore.coverImageUrl &&
+            url !== updatedStore.promotionImageUrl,
+        )
+        .map((url) => deleteUploadIfUnreferenced(url, store.merchantId)),
+    );
+    return NextResponse.json({
+      ...updatedStore,
+      quota: await getMerchantQuota(store.merchantId),
+    });
   } catch (error) {
     return handleApiError(error);
   }

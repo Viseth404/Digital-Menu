@@ -43,6 +43,7 @@ export async function DELETE(request: NextRequest, context: Context) {
       }
       throw error;
     }
+    await prisma.uploadAsset.deleteMany({ where: { filename } });
 
     await writeAdminAudit(prisma, {
       adminId: admin.id,

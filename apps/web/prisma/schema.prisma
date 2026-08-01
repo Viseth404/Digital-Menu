@@ -164,6 +164,7 @@ model Merchant {
   stores       Store[]
   subscription MerchantSubscription?
   payments     SubscriptionPayment[]
+  uploadAssets UploadAsset[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -232,6 +233,19 @@ model SubscriptionPayment {
 
   @@index([merchantId, createdAt])
   @@index([status, createdAt])
+}
+
+model UploadAsset {
+  id         String @id @default(cuid())
+  merchantId String
+  filename   String @unique
+  sizeBytes  Int
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([merchantId, createdAt])
 }
 
 model MerchantMember {

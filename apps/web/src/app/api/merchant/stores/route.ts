@@ -4,6 +4,7 @@ import { handleApiError } from "@/lib/server/api-response";
 import { prisma } from "@/lib/server/prisma";
 import { requireRequestUser } from "@/lib/server/session";
 import { requireUserSubscriptionAccess } from "@/features/subscriptions/server/lifecycle";
+import { getMerchantQuota } from "@/features/subscriptions/server/quotas";
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,7 +33,20 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { createdAt: "asc" },
     });
-    return NextResponse.json(stores);
+    const quotas = new Map(
+      await Promise.all(
+        merchantIds.map(
+          async (merchantId) =>
+            [merchantId, await getMerchantQuota(merchantId)] as const,
+        ),
+      ),
+    );
+    return NextResponse.json(
+      stores.map((store) => ({
+        ...store,
+        quota: quotas.get(store.merchantId),
+      })),
+    );
   } catch (error) {
     return handleApiError(error);
   }

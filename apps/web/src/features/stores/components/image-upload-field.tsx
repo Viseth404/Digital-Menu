@@ -9,6 +9,7 @@ import { uploadMerchantImage } from "../stores-api";
 type ImageUploadFieldProps = {
   label: string;
   name: string;
+  storeId: string;
   defaultValue?: string | null;
   description?: string;
   aspect?: "square" | "cover" | "product";
@@ -24,6 +25,7 @@ const aspectClasses = {
 export function ImageUploadField({
   label,
   name,
+  storeId,
   defaultValue,
   description = "JPG, PNG, WebP, or GIF. Maximum 5 MB.",
   aspect = "product",
@@ -43,7 +45,10 @@ export function ImageUploadField({
     setIsUploading(true);
     setError("");
     try {
-      const result = await uploadMerchantImage(file, { removeBackground });
+      const result = await uploadMerchantImage(file, {
+        storeId,
+        removeBackground,
+      });
       setUrl(result.url);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Upload failed");
