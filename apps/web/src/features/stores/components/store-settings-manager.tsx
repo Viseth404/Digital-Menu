@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { getPublicStorePath } from "@/config/app-config";
 import { showErrorToast, showSuccessToast } from "@/lib/toast";
+import { formatStorage } from "../format";
 import { getMerchantStores, updateMerchantStore } from "../stores-api";
 import { Store } from "../types";
 import { buildStoreInput, StoreSettingsFields } from "./settings-fields";
@@ -124,9 +125,18 @@ export function StoreSettingsManager() {
           <div className="flex gap-6 rounded-xl border border-white/10 bg-white/5 px-5 py-4">
             <div>
               <p className="text-2xl font-semibold">
-                {selectedStore._count.products}
+                {selectedStore.quota.products.used}/
+                {selectedStore.quota.products.limit}
               </p>
-              <p className="text-xs text-white/50">Products</p>
+              <p className="text-xs text-white/50">Plan products</p>
+            </div>
+            <div className="w-px bg-white/10" />
+            <div>
+              <p className="text-sm font-semibold">
+                {formatStorage(selectedStore.quota.storage.usedBytes)} /{" "}
+                {formatStorage(selectedStore.quota.storage.limitBytes)}
+              </p>
+              <p className="mt-1 text-xs text-white/50">Image storage</p>
             </div>
             <div className="w-px bg-white/10" />
             <div>

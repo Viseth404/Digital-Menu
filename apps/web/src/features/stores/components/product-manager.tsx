@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { showErrorToast, showSuccessToast } from "@/lib/toast";
-import { formatStorePrice } from "../format";
+import { formatStorage, formatStorePrice } from "../format";
 import {
   createStoreProduct,
   deleteStoreProduct,
@@ -66,6 +66,11 @@ export function ProductManager() {
   }, [selectedStore]);
 
   const storeId = selectedStore?.id ?? "";
+  const productQuota = selectedStore?.quota.products;
+  const storageQuota = selectedStore?.quota.storage;
+  const productLimitReached = Boolean(
+    productQuota && productQuota.used >= productQuota.limit,
+  );
   const filtered = products.filter((product) => {
     const matchesQuery = `${product.name} ${product.description ?? ""}`
       .toLowerCase()
@@ -108,6 +113,7 @@ export function ProductManager() {
       setProducts((current) =>
         current.filter((item) => item.id !== product.id),
       );
+      await refreshStoreUsage();
       showSuccessToast("Item deleted", product.name);
     } catch (error) {
       showErrorToast(
@@ -127,11 +133,25 @@ export function ProductManager() {
         ? [saved, ...current]
         : current.map((item) => (item.id === saved.id ? saved : item)),
     );
+    await refreshStoreUsage();
     setEditing(null);
     showSuccessToast(
       editing === "new" ? "Item added to your store" : "Item updated",
       saved.name,
     );
+  }
+
+  async function refreshStoreUsage() {
+    try {
+      const stores = await getMerchantStores();
+      setSelectedStore(
+        stores.find((store) => store.id === storeId) ?? stores[0] ?? null,
+      );
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Unable to refresh plan usage",
+      );
+    }
   }
 
   if (!selectedStore && !loading)
@@ -152,15 +172,19 @@ export function ProductManager() {
               {selectedStore?.name ?? "Select a store"}
             </h2>
             <p className="mt-2 text-sm text-white/60">
-              {products.length} items ·{" "}
-              {products.filter((p) => p.isAvailable).length} visible to
-              customers
+              {productQuota
+                ? `${productQuota.used}/${productQuota.limit} plan products`
+                : `${products.length} items`}{" "}
+              · {products.filter((p) => p.isAvailable).length} visible ·{" "}
+              {storageQuota
+                ? `${formatStorage(storageQuota.usedBytes)}/${formatStorage(storageQuota.limitBytes)} storage`
+                : "Storage unavailable"}
             </p>
           </div>
           <Button
             className="bg-white text-zinc-950 hover:bg-white/90"
             onClick={() => setEditing("new")}
-            disabled={!storeId}
+            disabled={!storeId || productLimitReached}
           >
             <PlusIcon /> Add new item
           </Button>
@@ -191,6 +215,12 @@ export function ProductManager() {
 
       {message ? (
         <p className="rounded-lg border bg-card px-4 py-3 text-sm">{message}</p>
+      ) : null}
+      {productLimitReached ? (
+        <p className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          Product limit reached ({productQuota?.used}/{productQuota?.limit}).
+          Delete an item or ask the administrator to upgrade your plan.
+        </p>
       ) : null}
       {loading ? (
         <p className="py-12 text-center text-sm text-muted-foreground">
@@ -293,6 +323,7 @@ export function ProductManager() {
 
       {editing ? (
         <ProductEditor
+          storeId={storeId}
           product={editing === "new" ? null : editing}
           currency={selectedStore?.currency ?? "USD"}
           categories={categories.filter((category) => category.isActive)}

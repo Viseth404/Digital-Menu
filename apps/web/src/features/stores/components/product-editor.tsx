@@ -14,6 +14,7 @@ import { Category, Product, ProductInput, ProductOptionGroup } from "../types";
 import { ImageUploadField } from "./image-upload-field";
 
 type ProductEditorProps = {
+  storeId: string;
   product: Product | null;
   currency: string;
   categories: Category[];
@@ -22,6 +23,7 @@ type ProductEditorProps = {
 };
 
 export function ProductEditor({
+  storeId,
   product,
   currency,
   categories,
@@ -162,6 +164,7 @@ export function ProductEditor({
           <ImageUploadField
             label="Product image"
             name="imageUrl"
+            storeId={storeId}
             defaultValue={product?.imageUrl}
             aspect="product"
             allowBackgroundRemoval

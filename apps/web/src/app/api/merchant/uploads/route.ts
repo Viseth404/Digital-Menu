@@ -1,15 +1,15 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { UserRole } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { ApiException, handleApiError } from "@/lib/server/api-response";
-import { requireRequestUser } from "@/lib/server/session";
+import { prisma } from "@/lib/server/prisma";
 import {
   getPlatformOperationalSettings,
   getPlatformServiceCredentials,
 } from "@/features/admin-support/server/settings";
-import { requireUserSubscriptionAccess } from "@/features/subscriptions/server/lifecycle";
+import { requireManagedStore } from "@/features/stores/merchant-access";
+import { reserveUploadAsset } from "@/features/subscriptions/server/quotas";
 
 const imageExtensions: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -20,12 +20,16 @@ const imageExtensions: Record<string, string> = {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireRequestUser(request, [UserRole.MERCHANT]);
-    await requireUserSubscriptionAccess(user.id);
     const settings = await getPlatformOperationalSettings();
     const form = await request.formData();
     const file = form.get("file");
+    const storeId = form.get("storeId");
     const removeBackground = form.get("removeBackground") === "true";
+
+    if (typeof storeId !== "string" || !storeId) {
+      throw new ApiException("Select a store before uploading an image", 400);
+    }
+    const store = await requireManagedStore(request, storeId);
 
     if (!(file instanceof File)) {
       throw new ApiException("Choose an image to upload", 400);
@@ -75,17 +79,37 @@ export async function POST(request: NextRequest) {
       contents = Buffer.from(await response.arrayBuffer());
       outputExtension = "png";
     }
+    if (contents.length > settings.uploadLimitMb * 1024 * 1024) {
+      throw new ApiException(
+        `Processed image must be smaller than ${settings.uploadLimitMb} MB`,
+        400,
+      );
+    }
 
     const filename = `${randomUUID()}.${outputExtension}`;
     const uploadDirectory =
       process.env.UPLOAD_DIRECTORY ??
       path.join(process.cwd(), "public", "uploads");
     await mkdir(uploadDirectory, { recursive: true });
-    await writeFile(path.join(uploadDirectory, filename), contents, {
-      flag: "wx",
+    const storage = await reserveUploadAsset({
+      merchantId: store.merchantId,
+      filename,
+      sizeBytes: contents.length,
     });
+    try {
+      await writeFile(path.join(uploadDirectory, filename), contents, {
+        flag: "wx",
+      });
+    } catch (error) {
+      await prisma.uploadAsset.deleteMany({ where: { filename } });
+      await unlink(path.join(uploadDirectory, filename)).catch(() => undefined);
+      throw error;
+    }
 
-    return NextResponse.json({ url: `/uploads/${filename}` }, { status: 201 });
+    return NextResponse.json(
+      { url: `/uploads/${filename}`, storage },
+      { status: 201 },
+    );
   } catch (error) {
     return handleApiError(error);
   }

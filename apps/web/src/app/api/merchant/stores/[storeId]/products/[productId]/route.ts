@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ApiException, handleApiError } from "@/lib/server/api-response";
 import { prisma } from "@/lib/server/prisma";
 import { requireManagedProduct } from "@/features/stores/merchant-access";
+import { deleteUploadIfUnreferenced } from "@/features/subscriptions/server/quotas";
 import {
   productOptionInclude,
   readProductOptionGroups,
@@ -22,7 +23,7 @@ type Context = { params: Promise<{ storeId: string; productId: string }> };
 export async function PATCH(request: NextRequest, context: Context) {
   try {
     const { storeId, productId } = await context.params;
-    await requireManagedProduct(request, storeId, productId);
+    const existing = await requireManagedProduct(request, storeId, productId);
     const body = readObject(await request.json());
     const sortOrder = readNonNegativeNumber(body, "sortOrder");
     const categoryId = readNullableString(body, "categoryId");
@@ -61,16 +62,18 @@ export async function PATCH(request: NextRequest, context: Context) {
               create: readProductOptionGroups(body.optionGroups) ?? [],
             },
     };
-    return NextResponse.json(
-      await prisma.product.update({
-        where: { id: productId },
-        data,
-        include: {
-          category: { select: { id: true, name: true } },
-          ...productOptionInclude,
-        },
-      }),
-    );
+    const product = await prisma.product.update({
+      where: { id: productId },
+      data,
+      include: {
+        category: { select: { id: true, name: true } },
+        ...productOptionInclude,
+      },
+    });
+    if (existing.imageUrl && existing.imageUrl !== product.imageUrl) {
+      await deleteUploadIfUnreferenced(existing.imageUrl, existing.merchantId);
+    }
+    return NextResponse.json(product);
   } catch (error) {
     return handleApiError(error);
   }
@@ -79,8 +82,9 @@ export async function PATCH(request: NextRequest, context: Context) {
 export async function DELETE(request: NextRequest, context: Context) {
   try {
     const { storeId, productId } = await context.params;
-    await requireManagedProduct(request, storeId, productId);
+    const product = await requireManagedProduct(request, storeId, productId);
     await prisma.product.delete({ where: { id: productId } });
+    await deleteUploadIfUnreferenced(product.imageUrl, product.merchantId);
     return NextResponse.json({ success: true });
   } catch (error) {
     return handleApiError(error);

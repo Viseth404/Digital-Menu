@@ -71,6 +71,7 @@ export function StoreSettingsFields({ store }: { store: Store }) {
           <ImageUploadField
             key={field.name}
             {...field}
+            storeId={store.id}
             defaultValue={store[field.name]}
           />
         ))}
@@ -111,6 +112,7 @@ export function StoreSettingsFields({ store }: { store: Store }) {
         <ImageUploadField
           label="Promotion image"
           name="promotionImageUrl"
+          storeId={store.id}
           description="Optional wide JPG, PNG, WebP, or GIF up to 5 MB."
           aspect="product"
           defaultValue={store.promotionImageUrl}

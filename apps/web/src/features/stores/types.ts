@@ -41,6 +41,10 @@ export type Store = {
     slug: string;
   };
   _count: { products: number };
+  quota: {
+    products: { used: number; limit: number };
+    storage: { usedBytes: number; limitBytes: number };
+  };
 };
 
 export type UpdateStoreInput = Partial<

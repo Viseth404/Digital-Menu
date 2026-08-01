@@ -23,6 +23,7 @@ import {
   SUBSCRIPTION_GRACE_PERIOD_DAYS,
   synchronizeAllSubscriptionLifecycles,
 } from "@/features/subscriptions/server/lifecycle";
+import { getMerchantQuota } from "@/features/subscriptions/server/quotas";
 
 export async function GET(request: NextRequest) {
   try {
@@ -99,10 +100,12 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    return NextResponse.json({
-      plans,
-      merchants: merchants.map((merchant) => ({
+    const merchantsWithQuota = await Promise.all(
+      merchants.map(async (merchant) => ({
         ...merchant,
+        quota: merchant.subscription
+          ? await getMerchantQuota(merchant.id)
+          : null,
         subscription: merchant.subscription
           ? {
               ...merchant.subscription,
@@ -112,6 +115,11 @@ export async function GET(request: NextRequest) {
             }
           : null,
       })),
+    );
+
+    return NextResponse.json({
+      plans,
+      merchants: merchantsWithQuota,
       payments,
       sessions,
       users,

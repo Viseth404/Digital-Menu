@@ -3,6 +3,10 @@ import { ApiException, handleApiError } from "@/lib/server/api-response";
 import { prisma } from "@/lib/server/prisma";
 import { requireManagedStore } from "@/features/stores/merchant-access";
 import {
+  assertCanCreateProduct,
+  lockMerchantQuota,
+} from "@/features/subscriptions/server/quotas";
+import {
   productOptionInclude,
   readProductOptionGroups,
 } from "@/features/stores/product-options";
@@ -39,7 +43,7 @@ export async function GET(request: NextRequest, context: Context) {
 export async function POST(request: NextRequest, context: Context) {
   try {
     const { storeId } = await context.params;
-    await requireManagedStore(request, storeId);
+    const store = await requireManagedStore(request, storeId);
     const body = readObject(await request.json());
     const categoryId = readNullableString(body, "categoryId");
     if (
@@ -48,29 +52,33 @@ export async function POST(request: NextRequest, context: Context) {
     ) {
       throw new ApiException("Category not found", 400);
     }
-    const product = await prisma.product.create({
-      data: {
-        storeId,
-        categoryId,
-        name: readString(body, "name", { min: 2 })!,
-        nameKh: readNullableString(body, "nameKh"),
-        description: readNullableString(body, "description"),
-        descriptionKh: readNullableString(body, "descriptionKh"),
-        price: readNumber(body, "price")!,
-        imageUrl: assertOptionalImageUrl(
-          readNullableString(body, "imageUrl"),
-          "imageUrl",
-        ),
-        isAvailable: readBoolean(body, "isAvailable") ?? true,
-        sortOrder: Math.round(readNonNegativeNumber(body, "sortOrder") ?? 0),
-        optionGroups: {
-          create: readProductOptionGroups(body.optionGroups) ?? [],
+    const product = await prisma.$transaction(async (transaction) => {
+      await lockMerchantQuota(transaction, store.merchantId);
+      await assertCanCreateProduct(transaction, store.merchantId);
+      return transaction.product.create({
+        data: {
+          storeId,
+          categoryId,
+          name: readString(body, "name", { min: 2 })!,
+          nameKh: readNullableString(body, "nameKh"),
+          description: readNullableString(body, "description"),
+          descriptionKh: readNullableString(body, "descriptionKh"),
+          price: readNumber(body, "price")!,
+          imageUrl: assertOptionalImageUrl(
+            readNullableString(body, "imageUrl"),
+            "imageUrl",
+          ),
+          isAvailable: readBoolean(body, "isAvailable") ?? true,
+          sortOrder: Math.round(readNonNegativeNumber(body, "sortOrder") ?? 0),
+          optionGroups: {
+            create: readProductOptionGroups(body.optionGroups) ?? [],
+          },
         },
-      },
-      include: {
-        category: { select: { id: true, name: true } },
-        ...productOptionInclude,
-      },
+        include: {
+          category: { select: { id: true, name: true } },
+          ...productOptionInclude,
+        },
+      });
     });
     return NextResponse.json(product, { status: 201 });
   } catch (error) {
