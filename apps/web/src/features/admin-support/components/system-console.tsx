@@ -191,7 +191,7 @@ export function SystemConsole() {
               value={health.data.storesWithoutProducts}
             />
             <Diagnostic
-              label="Stores without table QR codes"
+              label="Table QR stores without active table codes"
               value={health.data.storesWithoutTables}
             />
             <Diagnostic

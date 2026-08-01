@@ -1,4 +1,4 @@
-import { OrderStatus, UserRole } from "@prisma/client";
+import { OrderingMode, OrderStatus, UserRole } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { handleApiError } from "@/lib/server/api-response";
 import { prisma } from "@/lib/server/prisma";
@@ -108,6 +108,7 @@ export async function GET(request: NextRequest) {
 function getStoreDiagnostics(store: {
   status: string;
   isPublished: boolean;
+  orderingMode: OrderingMode;
   logoUrl: string | null;
   coverImageUrl: string | null;
   _count: {
@@ -122,7 +123,12 @@ function getStoreDiagnostics(store: {
   if (!store.isPublished) diagnostics.push("Storefront is not published");
   if (!store._count.products) diagnostics.push("No products configured");
   if (!store._count.categories) diagnostics.push("No categories configured");
-  if (!store._count.tables) diagnostics.push("No table QR codes");
+  if (
+    store.orderingMode === OrderingMode.TABLE_QR &&
+    !store._count.tables
+  ) {
+    diagnostics.push("Table QR mode has no table QR codes");
+  }
   if (!store.logoUrl) diagnostics.push("Store logo is missing");
   if (!store.coverImageUrl) diagnostics.push("Cover image is missing");
   return diagnostics;

@@ -1,4 +1,4 @@
-import { UserRole } from "@prisma/client";
+import { OrderingMode, UserRole } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { handleApiError } from "@/lib/server/api-response";
 import { prisma } from "@/lib/server/prisma";
@@ -35,7 +35,12 @@ export async function GET(request: NextRequest) {
         },
       }),
       prisma.store.count({ where: { products: { none: {} } } }),
-      prisma.store.count({ where: { tables: { none: { isActive: true } } } }),
+      prisma.store.count({
+        where: {
+          orderingMode: OrderingMode.TABLE_QR,
+          tables: { none: { isActive: true } },
+        },
+      }),
       prisma.order.count({
         where: {
           status: { in: ["PENDING", "CONFIRMED", "PREPARING", "READY"] },
