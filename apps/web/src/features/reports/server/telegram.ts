@@ -55,7 +55,8 @@ export async function sendTelegramReportClosedAlert(
     "",
     "━━━━━━━━━━━━━━━━━━",
     "",
-    `🔗 មើលរបាយការណ៍ (${reportUrl})`,
+    "🔗 មើលរបាយការណ៍",
+    reportUrl,
   ].join("\n");
 
   const response = await fetch(
@@ -63,7 +64,15 @@ export async function sendTelegramReportClosedAlert(
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: store.telegramChatId, text }),
+      body: JSON.stringify({
+        chat_id: store.telegramChatId,
+        text,
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "🔗 មើលរបាយការណ៍", url: reportUrl }],
+          ],
+        },
+      }),
       signal: AbortSignal.timeout(5_000),
     },
   );

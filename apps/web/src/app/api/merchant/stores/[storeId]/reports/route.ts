@@ -11,6 +11,33 @@ import { readObject, readString } from "@/lib/server/validation";
 
 type Context = { params: Promise<{ storeId: string }> };
 
+function getPublicRequestOrigin(request: NextRequest) {
+  const forwardedHost = request.headers
+    .get("x-forwarded-host")
+    ?.split(",")[0]
+    ?.trim();
+  const forwardedProtocol = request.headers
+    .get("x-forwarded-proto")
+    ?.split(",")[0]
+    ?.trim();
+
+  if (forwardedHost) {
+    try {
+      return new URL(`${forwardedProtocol || "https"}://${forwardedHost}`)
+        .origin;
+    } catch {
+      // Fall back to the framework-provided origin for malformed proxy headers.
+    }
+  }
+
+  const railwayPublicDomain = process.env.RAILWAY_PUBLIC_DOMAIN?.trim();
+  if (railwayPublicDomain) {
+    return new URL(`https://${railwayPublicDomain}`).origin;
+  }
+
+  return request.nextUrl.origin;
+}
+
 export async function GET(request: NextRequest, context: Context) {
   try {
     const { storeId } = await context.params;
@@ -108,7 +135,7 @@ export async function POST(request: NextRequest, context: Context) {
     });
     const reportUrl = new URL(
       `/merchant/reports?${query.toString()}`,
-      request.url,
+      getPublicRequestOrigin(request),
     ).toString();
     const telegramSent = await sendTelegramReportClosedAlert(
       store,
