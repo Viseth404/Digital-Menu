@@ -30,7 +30,15 @@ export function LoginForm() {
         email: String(formData.get("email")),
         password: String(formData.get("password")),
       });
-      window.location.replace(appConfig.routes.dashboard);
+      const requestedDestination = new URLSearchParams(
+        window.location.search,
+      ).get("next");
+      const destination =
+        requestedDestination?.startsWith("/") &&
+        !requestedDestination.startsWith("//")
+          ? requestedDestination
+          : appConfig.routes.dashboard;
+      window.location.replace(destination);
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Unable to sign in",
