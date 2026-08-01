@@ -23,6 +23,7 @@ export const appConfig = {
     merchantProducts: "/merchant/products",
     merchantCategories: "/merchant/categories",
     merchantOrders: "/merchant/orders",
+    merchantReports: "/merchant/reports",
   },
 } as const;
 
