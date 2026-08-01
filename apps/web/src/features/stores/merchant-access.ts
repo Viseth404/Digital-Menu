@@ -5,6 +5,7 @@ import { NextRequest } from "next/server";
 import { ApiException } from "@/lib/server/api-response";
 import { prisma } from "@/lib/server/prisma";
 import { requireRequestUser } from "@/lib/server/session";
+import { requireMerchantSubscriptionAccess } from "@/features/subscriptions/server/lifecycle";
 
 const managementRoles: MerchantMemberRole[] = [
   MerchantMemberRole.OWNER,
@@ -28,6 +29,7 @@ export async function requireManagedStore(
   });
 
   if (!store) throw new ApiException("Store not found", 404);
+  await requireMerchantSubscriptionAccess(store.merchantId);
   return store;
 }
 
@@ -46,6 +48,7 @@ export async function requireStoreAccess(
     },
   });
   if (!store) throw new ApiException("Store not found", 404);
+  await requireMerchantSubscriptionAccess(store.merchantId);
   return store;
 }
 

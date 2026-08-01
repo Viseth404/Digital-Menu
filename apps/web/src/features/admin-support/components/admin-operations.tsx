@@ -3,6 +3,8 @@
 import * as React from "react";
 import {
   ActivityIcon,
+  AlertTriangleIcon,
+  CalendarClockIcon,
   CreditCardIcon,
   EyeIcon,
   PencilIcon,
@@ -53,6 +55,7 @@ type Merchant = {
     status: string;
     billingInterval: string;
     currentPeriodEnd: string;
+    graceEndsAt: string;
     plan: Plan;
   };
   _count: { stores: number; members: number; payments: number };
@@ -96,10 +99,13 @@ type OperationsData = {
   monitoring: {
     lockedUsers: number;
     expiredSubscriptions: number;
+    dueSoonSubscriptions: number;
+    pastDueSubscriptions: number;
     pendingOnboarding: number;
     deletedMerchants: number;
     activeSessions: number;
   };
+  billingPolicy: { gracePeriodDays: number };
 };
 
 export function AdminOperations() {
@@ -159,14 +165,24 @@ export function AdminOperations() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <Metric
           label="Review queue"
           value={data.monitoring.pendingOnboarding}
           icon={UserRoundCheckIcon}
         />
         <Metric
-          label="Expired plans"
+          label="Due in 7 days"
+          value={data.monitoring.dueSoonSubscriptions}
+          icon={CalendarClockIcon}
+        />
+        <Metric
+          label="In grace period"
+          value={data.monitoring.pastDueSubscriptions}
+          icon={AlertTriangleIcon}
+        />
+        <Metric
+          label="Access closed"
           value={data.monitoring.expiredSubscriptions}
           icon={CreditCardIcon}
         />
@@ -179,11 +195,6 @@ export function AdminOperations() {
           label="Active sessions"
           value={data.monitoring.activeSessions}
           icon={ActivityIcon}
-        />
-        <Metric
-          label="Deleted merchants"
-          value={data.monitoring.deletedMerchants}
-          icon={Trash2Icon}
         />
       </div>
 
@@ -205,8 +216,8 @@ export function AdminOperations() {
           <div>
             <h2 className="font-semibold">Merchant lifecycle</h2>
             <p className="text-sm text-muted-foreground">
-              Onboarding, plans, soft deletion, restoration, and support
-              preview.
+              Plans update automatically after payment. Overdue merchants get a
+              {` ${data.billingPolicy.gracePeriodDays}-day grace period before access closes.`}
             </p>
           </div>
           <Button size="sm" variant="outline" onClick={() => void load()}>
@@ -238,7 +249,15 @@ export function AdminOperations() {
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <RecentPayments payments={data.payments} />
+        <RecentPayments
+          payments={data.payments}
+          onDelete={(paymentId) =>
+            runAction(
+              { action: "DELETE_PAYMENT", paymentId },
+              "Payment record deleted",
+            ).then(() => undefined)
+          }
+        />
         <SessionList
           sessions={data.sessions}
           onRevoke={(sessionId) =>
@@ -347,6 +366,9 @@ function MerchantRow({
   const [planId, setPlanId] = React.useState(
     merchant.subscription?.plan.id ?? plans[0]?.id ?? "",
   );
+  const [billingInterval, setBillingInterval] = React.useState(
+    merchant.subscription?.billingInterval ?? "MONTHLY",
+  );
   return (
     <article className="grid gap-4 p-5 lg:grid-cols-[1fr_auto] lg:items-center">
       <div>
@@ -362,10 +384,12 @@ function MerchantRow({
         </p>
         {merchant.subscription ? (
           <p className="mt-1 text-xs text-muted-foreground">
-            {merchant.subscription.plan.name} · renews{" "}
-            {new Date(
-              merchant.subscription.currentPeriodEnd,
-            ).toLocaleDateString()}
+            {merchant.subscription.plan.name} ·{" "}
+            {merchant.subscription.status === "PAST_DUE"
+              ? `grace ends ${new Date(merchant.subscription.graceEndsAt).toLocaleDateString()}`
+              : merchant.subscription.status === "EXPIRED"
+                ? `access closed ${new Date(merchant.subscription.graceEndsAt).toLocaleDateString()}`
+                : `renews ${new Date(merchant.subscription.currentPeriodEnd).toLocaleDateString()}`}
           </p>
         ) : null}
       </div>
@@ -387,6 +411,15 @@ function MerchantRow({
               </option>
             ))}
         </select>
+        <select
+          value={billingInterval}
+          onChange={(event) => setBillingInterval(event.target.value)}
+          className="h-9 rounded-md border bg-background px-2 text-xs"
+          aria-label={`Billing interval for ${merchant.name}`}
+        >
+          <option value="MONTHLY">Monthly</option>
+          <option value="YEARLY">Yearly</option>
+        </select>
         <Button
           size="sm"
           variant="outline"
@@ -397,7 +430,7 @@ function MerchantRow({
                 action: "ASSIGN_PLAN",
                 merchantId: merchant.id,
                 planId,
-                billingInterval: "MONTHLY",
+                billingInterval,
                 status: "ACTIVE",
               },
               "Subscription assigned",
@@ -723,6 +756,10 @@ function PaymentRecorder({
       }}
     >
       <h2 className="font-semibold">Record manual payment</h2>
+      <p className="mt-1 text-xs text-muted-foreground">
+        A paid record automatically activates the merchant and renews its
+        monthly or yearly billing period.
+      </p>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <select
           name="merchantId"
@@ -763,29 +800,57 @@ function PaymentRecorder({
 
 function RecentPayments({
   payments,
+  onDelete,
 }: {
   payments: OperationsData["payments"];
+  onDelete: (id: string) => Promise<void>;
 }) {
   return (
     <section className="rounded-2xl border bg-card p-5 shadow-sm">
       <h2 className="font-semibold">Recent payments</h2>
-      <div className="mt-3 divide-y">
-        {payments.slice(0, 8).map((payment) => (
+      <div className="mt-3 max-h-96 divide-y overflow-y-auto">
+        {payments.map((payment) => (
           <div
             key={payment.id}
-            className="flex justify-between gap-3 py-3 text-sm"
+            className="flex items-center justify-between gap-3 py-3 text-sm"
           >
-            <span>
+            <span className="min-w-0">
               <span className="block font-medium">{payment.merchant.name}</span>
-              <span className="text-xs text-muted-foreground">
-                {payment.method} · {payment.reference ?? "No reference"}
+              <span className="block truncate text-xs text-muted-foreground">
+                {payment.status} · {payment.method} ·{" "}
+                {payment.reference ?? "No reference"} ·{" "}
+                {new Date(payment.createdAt).toLocaleDateString()}
               </span>
             </span>
-            <span className="font-semibold">
-              {payment.currency} {Number(payment.amount).toFixed(2)}
+            <span className="flex shrink-0 items-center gap-2">
+              <span className="font-semibold">
+                {payment.currency} {Number(payment.amount).toFixed(2)}
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive"
+                aria-label={`Delete payment for ${payment.merchant.name}`}
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      "Delete this payment record? This removes it from payment history but does not change the merchant’s current renewal dates.",
+                    )
+                  ) {
+                    void onDelete(payment.id);
+                  }
+                }}
+              >
+                <Trash2Icon />
+              </Button>
             </span>
           </div>
         ))}
+        {!payments.length ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            No payments recorded yet.
+          </p>
+        ) : null}
       </div>
     </section>
   );

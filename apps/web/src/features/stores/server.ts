@@ -3,9 +3,10 @@ import "server-only";
 import { MerchantStatus, StoreStatus } from "@prisma/client";
 import { prisma } from "@/lib/server/prisma";
 import type { StorefrontCategory } from "@/features/storefront/types";
+import { hasMerchantSubscriptionAccess } from "@/features/subscriptions/server/lifecycle";
 
-export function findPublicStore(merchantSlug: string, storeSlug: string) {
-  return prisma.store.findFirst({
+export async function findPublicStore(merchantSlug: string, storeSlug: string) {
+  const store = await prisma.store.findFirst({
     where: {
       slug: storeSlug,
       isPublished: true,
@@ -19,6 +20,7 @@ export function findPublicStore(merchantSlug: string, storeSlug: string) {
     include: {
       merchant: {
         select: {
+          id: true,
           name: true,
           slug: true,
           contactEmail: true,
@@ -51,6 +53,10 @@ export function findPublicStore(merchantSlug: string, storeSlug: string) {
       },
     },
   });
+
+  if (!store) return null;
+  if (!(await hasMerchantSubscriptionAccess(store.merchant.id))) return null;
+  return store;
 }
 
 export function findQrOrderingTable(
