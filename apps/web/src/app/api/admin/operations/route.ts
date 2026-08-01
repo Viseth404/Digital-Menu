@@ -3,6 +3,7 @@ import {
   OnboardingStatus,
   PaymentMethod,
   PaymentStatus,
+  Prisma,
   SubscriptionStatus,
   UserRole,
 } from "@prisma/client";
@@ -17,11 +18,19 @@ import {
   readObject,
   readString,
 } from "@/lib/server/validation";
+import {
+  getSubscriptionGraceEndsAt,
+  SUBSCRIPTION_GRACE_PERIOD_DAYS,
+  synchronizeAllSubscriptionLifecycles,
+} from "@/features/subscriptions/server/lifecycle";
 
 export async function GET(request: NextRequest) {
   try {
     await requireRequestUser(request, [UserRole.ADMIN]);
     const now = new Date();
+    await synchronizeAllSubscriptionLifecycles(now);
+    const dueSoonAt = new Date(now);
+    dueSoonAt.setUTCDate(dueSoonAt.getUTCDate() + 7);
     const [
       plans,
       merchants,
@@ -30,6 +39,8 @@ export async function GET(request: NextRequest) {
       users,
       lockedUsers,
       expiredSubscriptions,
+      dueSoonSubscriptions,
+      pastDueSubscriptions,
     ] = await Promise.all([
       prisma.subscriptionPlan.findMany({
         include: { _count: { select: { subscriptions: true } } },
@@ -73,22 +84,45 @@ export async function GET(request: NextRequest) {
       }),
       prisma.user.count({ where: { lockedUntil: { gt: now } } }),
       prisma.merchantSubscription.count({
+        where: { status: SubscriptionStatus.EXPIRED },
+      }),
+      prisma.merchantSubscription.count({
         where: {
-          currentPeriodEnd: { lt: now },
-          status: { in: ["ACTIVE", "TRIAL"] },
+          currentPeriodEnd: { gte: now, lte: dueSoonAt },
+          status: {
+            in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIAL],
+          },
         },
+      }),
+      prisma.merchantSubscription.count({
+        where: { status: SubscriptionStatus.PAST_DUE },
       }),
     ]);
 
     return NextResponse.json({
       plans,
-      merchants,
+      merchants: merchants.map((merchant) => ({
+        ...merchant,
+        subscription: merchant.subscription
+          ? {
+              ...merchant.subscription,
+              graceEndsAt: getSubscriptionGraceEndsAt(
+                merchant.subscription.currentPeriodEnd,
+              ),
+            }
+          : null,
+      })),
       payments,
       sessions,
       users,
+      billingPolicy: {
+        gracePeriodDays: SUBSCRIPTION_GRACE_PERIOD_DAYS,
+      },
       monitoring: {
         lockedUsers,
         expiredSubscriptions,
+        dueSoonSubscriptions,
+        pastDueSubscriptions,
         pendingOnboarding: merchants.filter(
           (merchant) => merchant.onboardingStatus === "READY_FOR_REVIEW",
         ).length,
@@ -111,6 +145,7 @@ export async function POST(request: NextRequest) {
     let targetType = "PLATFORM";
     let targetId: string | undefined;
     let targetName: string | undefined;
+    let auditDetails: Prisma.InputJsonValue | undefined;
 
     if (action === "CREATE_PLAN") {
       result = await prisma.subscriptionPlan.create({
@@ -182,9 +217,7 @@ export async function POST(request: NextRequest) {
       const interval = readEnum(body, "billingInterval", BillingInterval);
       const status = readEnum(body, "status", SubscriptionStatus);
       const start = new Date();
-      const end = new Date(start);
-      if (interval === "YEARLY") end.setFullYear(end.getFullYear() + 1);
-      else end.setMonth(end.getMonth() + 1);
+      const end = addBillingInterval(start, interval);
       result = await prisma.merchantSubscription.upsert({
         where: { merchantId },
         create: {
@@ -209,25 +242,104 @@ export async function POST(request: NextRequest) {
     } else if (action === "RECORD_PAYMENT") {
       const merchantId = readString(body, "merchantId")!;
       const paymentStatus = readEnum(body, "status", PaymentStatus);
-      const subscription = await prisma.merchantSubscription.findUnique({
-        where: { merchantId },
-        select: { id: true },
-      });
-      result = await prisma.subscriptionPayment.create({
-        data: {
-          merchantId,
-          subscriptionId: subscription?.id,
-          amount: readNumber(body, "amount")!,
-          currency: readString(body, "currency") ?? "USD",
-          method: readEnum(body, "method", PaymentMethod),
-          status: paymentStatus,
-          reference: readNullableString(body, "reference"),
-          note: readNullableString(body, "note"),
-          paidAt: paymentStatus === PaymentStatus.PAID ? new Date() : null,
-        },
+      const amount = readNumber(body, "amount")!;
+      if (amount < 0.01) {
+        throw new ApiException("Payment amount must be at least 0.01", 400);
+      }
+      const paidAt = paymentStatus === PaymentStatus.PAID ? new Date() : null;
+      result = await prisma.$transaction(async (transaction) => {
+        const subscription = await transaction.merchantSubscription.findUnique({
+          where: { merchantId },
+          select: {
+            id: true,
+            status: true,
+            billingInterval: true,
+            currentPeriodStart: true,
+            currentPeriodEnd: true,
+          },
+        });
+        if (!subscription) {
+          throw new ApiException(
+            "Assign a subscription plan before recording a payment",
+            409,
+          );
+        }
+
+        const priorPaidPayments = await transaction.subscriptionPayment.count({
+          where: {
+            subscriptionId: subscription.id,
+            status: PaymentStatus.PAID,
+          },
+        });
+        const payment = await transaction.subscriptionPayment.create({
+          data: {
+            merchantId,
+            subscriptionId: subscription.id,
+            amount,
+            currency: readString(body, "currency") ?? "USD",
+            method: readEnum(body, "method", PaymentMethod),
+            status: paymentStatus,
+            reference: readNullableString(body, "reference"),
+            note: readNullableString(body, "note"),
+            paidAt,
+          },
+        });
+
+        if (paidAt) {
+          const shouldStartNewPeriod =
+            priorPaidPayments > 0 || subscription.currentPeriodEnd <= paidAt;
+          const periodStart = shouldStartNewPeriod
+            ? subscription.currentPeriodEnd > paidAt
+              ? subscription.currentPeriodEnd
+              : paidAt
+            : subscription.currentPeriodStart;
+          const periodEnd = shouldStartNewPeriod
+            ? addBillingInterval(periodStart, subscription.billingInterval)
+            : subscription.currentPeriodEnd;
+
+          await transaction.merchantSubscription.update({
+            where: { id: subscription.id },
+            data: {
+              status: SubscriptionStatus.ACTIVE,
+              currentPeriodStart: periodStart,
+              currentPeriodEnd: periodEnd,
+              cancelledAt: null,
+            },
+          });
+          auditDetails = {
+            amount,
+            renewalApplied: shouldStartNewPeriod,
+            previousStatus: subscription.status,
+            periodStart: periodStart.toISOString(),
+            periodEnd: periodEnd.toISOString(),
+          };
+        } else {
+          auditDetails = { amount, renewalApplied: false };
+        }
+        return payment;
       });
       targetType = "SUBSCRIPTION_PAYMENT";
       targetId = (result as { id: string }).id;
+    } else if (action === "DELETE_PAYMENT") {
+      const paymentId = readString(body, "paymentId")!;
+      const payment = await prisma.subscriptionPayment.findUniqueOrThrow({
+        where: { id: paymentId },
+        include: { merchant: { select: { name: true } } },
+      });
+      await prisma.subscriptionPayment.delete({ where: { id: paymentId } });
+      result = { deleted: true, id: paymentId };
+      targetType = "SUBSCRIPTION_PAYMENT";
+      targetId = paymentId;
+      targetName = payment.merchant.name;
+      auditDetails = {
+        amount: payment.amount.toString(),
+        currency: payment.currency,
+        method: payment.method,
+        status: payment.status,
+        reference: payment.reference,
+        paidAt: payment.paidAt?.toISOString() ?? null,
+        subscriptionDatesChanged: false,
+      };
     } else if (action === "UPDATE_ONBOARDING") {
       const merchantId = readString(body, "merchantId")!;
       const onboardingStatus = readEnum(
@@ -340,13 +452,31 @@ export async function POST(request: NextRequest) {
       targetType,
       targetId,
       targetName,
-      details: { readOnly: action === "PREVIEW_MERCHANT" },
+      details: auditDetails ?? { readOnly: action === "PREVIEW_MERCHANT" },
       request,
     });
     return NextResponse.json(result);
   } catch (error) {
     return handleApiError(error);
   }
+}
+
+function addBillingInterval(start: Date, interval: BillingInterval) {
+  if (interval === BillingInterval.YEARLY) {
+    const end = new Date(start);
+    end.setUTCFullYear(end.getUTCFullYear() + 1);
+    return end;
+  }
+
+  const end = new Date(start);
+  const day = end.getUTCDate();
+  end.setUTCDate(1);
+  end.setUTCMonth(end.getUTCMonth() + 1);
+  const lastDay = new Date(
+    Date.UTC(end.getUTCFullYear(), end.getUTCMonth() + 1, 0),
+  ).getUTCDate();
+  end.setUTCDate(Math.min(day, lastDay));
+  return end;
 }
 
 function readPositiveInteger(body: Record<string, unknown>, key: string) {

@@ -9,6 +9,7 @@ import {
   getPlatformOperationalSettings,
   getPlatformServiceCredentials,
 } from "@/features/admin-support/server/settings";
+import { requireUserSubscriptionAccess } from "@/features/subscriptions/server/lifecycle";
 
 const imageExtensions: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -19,7 +20,8 @@ const imageExtensions: Record<string, string> = {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireRequestUser(request, [UserRole.MERCHANT]);
+    const user = await requireRequestUser(request, [UserRole.MERCHANT]);
+    await requireUserSubscriptionAccess(user.id);
     const settings = await getPlatformOperationalSettings();
     const form = await request.formData();
     const file = form.get("file");

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { handleApiError } from "@/lib/server/api-response";
 import { prisma } from "@/lib/server/prisma";
 import { requireRequestUser } from "@/lib/server/session";
+import { requireUserSubscriptionAccess } from "@/features/subscriptions/server/lifecycle";
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,8 +11,10 @@ export async function GET(request: NextRequest) {
       UserRole.MERCHANT,
       UserRole.STAFF,
     ]);
+    const merchantIds = await requireUserSubscriptionAccess(user.id);
     const stores = await prisma.store.findMany({
       where: {
+        merchantId: { in: merchantIds },
         merchant: {
           deletedAt: null,
           members: { some: { userId: user.id } },
