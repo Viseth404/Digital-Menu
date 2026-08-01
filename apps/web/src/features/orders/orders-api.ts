@@ -28,9 +28,13 @@ export function deleteStoreTable(storeId: string, tableId: string) {
 }
 
 export function getStoreOrders(storeId: string, signal?: AbortSignal) {
-  return apiRequest<StoreOrder[]>(`/merchant/stores/${storeId}/orders`, {
-    signal,
-  });
+  return apiRequest<StoreOrder[]>(
+    `/merchant/stores/${storeId}/orders?scope=today`,
+    {
+      signal,
+      cache: "no-store",
+    },
+  );
 }
 
 export function createManualSale(

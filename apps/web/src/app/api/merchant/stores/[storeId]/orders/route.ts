@@ -13,24 +13,29 @@ import {
   readObject,
   readString,
 } from "@/lib/server/validation";
+import { getReportDateRange } from "@/features/reports/server/date-range";
 
 type Context = { params: Promise<{ storeId: string }> };
 
 export async function GET(request: NextRequest, context: Context) {
   try {
     const { storeId } = await context.params;
-    await requireManagedStore(request, storeId);
-    return NextResponse.json(
-      await prisma.order.findMany({
-        where: { storeId },
-        include: {
-          table: { select: { id: true, number: true, name: true } },
-          items: { include: { options: true } },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 100,
-      }),
-    );
+    const store = await requireManagedStore(request, storeId);
+    const range = getReportDateRange(null, null, store.timezone);
+    const orders = await prisma.order.findMany({
+      where: { storeId, createdAt: { gte: range.start, lt: range.end } },
+      include: {
+        table: { select: { id: true, number: true, name: true } },
+        items: { include: { options: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    });
+    return NextResponse.json(orders, {
+      headers: {
+        "Cache-Control": "private, no-store, max-age=0, must-revalidate",
+      },
+    });
   } catch (error) {
     return handleApiError(error);
   }

@@ -8,6 +8,7 @@ import {
   LayoutDashboardIcon,
   PackageOpenIcon,
   QrCodeIcon,
+  ChartNoAxesCombinedIcon,
   SettingsIcon,
   StoreIcon,
   TagsIcon,
@@ -35,6 +36,7 @@ const icons: Record<NavigationIcon, React.ComponentType> = {
   categories: TagsIcon,
   users: UserCogIcon,
   orders: QrCodeIcon,
+  reports: ChartNoAxesCombinedIcon,
   audit: FileClockIcon,
   system: SettingsIcon,
 };

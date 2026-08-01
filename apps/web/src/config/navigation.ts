@@ -8,6 +8,7 @@ export type NavigationIcon =
   | "products"
   | "categories"
   | "orders"
+  | "reports"
   | "audit"
   | "system"
   | "users";
@@ -89,6 +90,11 @@ const navigationByRole: Record<UserRole, NavigationItem[]> = {
       label: "Orders & QR",
       href: appConfig.routes.merchantOrders,
       icon: "orders",
+    },
+    {
+      label: "Reports",
+      href: appConfig.routes.merchantReports,
+      icon: "reports",
     },
   ],
   STAFF: [dashboardItem],
