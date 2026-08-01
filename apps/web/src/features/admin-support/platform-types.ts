@@ -48,6 +48,23 @@ export type AdminOrder = {
   }>;
 };
 
+export type AdminOrdersResponse = {
+  orders: AdminOrder[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+  filterOptions: {
+    merchants: Array<{
+      id: string;
+      name: string;
+      stores: Array<{ id: string; name: string }>;
+    }>;
+  };
+};
+
 export type AuditEntry = {
   id: string;
   action: string;

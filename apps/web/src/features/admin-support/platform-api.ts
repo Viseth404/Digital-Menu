@@ -1,6 +1,7 @@
 import { apiRequest } from "@/lib/api-client";
 import type {
   AdminOrder,
+  AdminOrdersResponse,
   AuditEntry,
   PlatformOverview,
   SystemHealth,
@@ -11,14 +12,25 @@ export function getPlatformOverview(signal?: AbortSignal) {
 }
 
 export function getAdminOrders(
-  filters: { search?: string; status?: string; from?: string; to?: string },
+  filters: {
+    search?: string;
+    merchantId?: string;
+    storeId?: string;
+    status?: string;
+    source?: string;
+    from?: string;
+    to?: string;
+    sort?: string;
+    page?: number;
+    pageSize?: number;
+  },
   signal?: AbortSignal,
 ) {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(filters)) {
-    if (value) query.set(key, value);
+    if (value !== undefined && value !== "") query.set(key, String(value));
   }
-  return apiRequest<AdminOrder[]>(`/admin/orders?${query}`, { signal });
+  return apiRequest<AdminOrdersResponse>(`/admin/orders?${query}`, { signal });
 }
 
 export function updateAdminOrderStatus(orderId: string, status: string) {
